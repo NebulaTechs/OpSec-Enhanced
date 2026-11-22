@@ -64,39 +64,57 @@ public abstract class ClientCommonPacketListenerImplMixin {
     // with zero confirmation — an unrequested redirect discloses your IP to wherever
     // you're sent. Cancels once to show a confirm prompt, then re-invokes handleTransfer
     // (bypassing this same check via identity match on the approved packet) if accepted.
+    //
+    // This mixin runs at HEAD, which is BEFORE vanilla's own
+    // PacketUtils.ensureRunningOnSameThread() call at the top of handleTransfer — so
+    // this code executes on the Netty IO thread, not the render thread. Touching the
+    // screen from there is illegal: fabric-screen-api rejects a screen that was
+    // installed off the render thread and the client crashes with
+    // "The current screen (ConfirmScreen) has not been correctly initialised".
+    // Every screen change therefore goes through Minecraft.execute(), which schedules
+    // the task onto the render thread.
     @Inject(method = "handleTransfer", at = @At("HEAD"), cancellable = true)
     private void opsec$onTransfer(net.minecraft.network.protocol.common.ClientboundTransferPacket packet, CallbackInfo ci) {
         if (packet == opsec$approvedTransfer) {
             opsec$approvedTransfer = null;
+            aurick.opsec.mod.config.OpsecConfig.getInstance()
+                    .pinRuleForTransfer(packet.host(), packet.port());
             return;
         }
         if (!aurick.opsec.mod.config.OpsecConfig.getInstance().getSettings().isConfirmTransfer()) {
+            aurick.opsec.mod.config.OpsecConfig.getInstance()
+                    .pinRuleForTransfer(packet.host(), packet.port());
             return;
         }
         ci.cancel();
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-        //? if >=26.2 {
-        /*net.minecraft.client.gui.screens.Screen previous = mc.gui.screen();*/
-        //?} else {
-        net.minecraft.client.gui.screens.Screen previous = mc.screen;
-        //?}
-        net.minecraft.client.gui.screens.ConfirmScreen confirmScreen = new net.minecraft.client.gui.screens.ConfirmScreen(confirmed -> {
+        mc.execute(() -> {
             //? if >=26.2 {
-            /*mc.setScreenAndShow(previous);*/
+            /*net.minecraft.client.gui.screens.Screen previous = mc.gui.screen();*/
             //?} else {
-            mc.setScreen(previous);
+            net.minecraft.client.gui.screens.Screen previous = mc.screen;
             //?}
-            if (confirmed) {
-                opsec$approvedTransfer = packet;
-                this.handleTransfer(packet);
-            }
-        }, OpsecLang.component(OpsecStrings.CONFIRM_TRANSFER_TITLE),
-           OpsecLang.component(OpsecStrings.CONFIRM_TRANSFER_MESSAGE, packet.host(), packet.port()));
-        //? if >=26.2 {
-        /*mc.setScreenAndShow(confirmScreen);*/
-        //?} else {
-        mc.setScreen(confirmScreen);
-        //?}
+            net.minecraft.client.gui.screens.ConfirmScreen confirmScreen = new net.minecraft.client.gui.screens.ConfirmScreen(confirmed -> {
+                //? if >=26.2 {
+                /*mc.setScreenAndShow(previous);*/
+                //?} else {
+                mc.setScreen(previous);
+                //?}
+                if (confirmed) {
+                    opsec$approvedTransfer = packet;
+                    // The confirm button runs on the render thread, which is the same
+                    // thread vanilla's ensureRunningOnSameThread() demands, so this
+                    // re-invocation runs the real transfer inline.
+                    this.handleTransfer(packet);
+                }
+            }, OpsecLang.component(OpsecStrings.CONFIRM_TRANSFER_TITLE),
+               OpsecLang.component(OpsecStrings.CONFIRM_TRANSFER_MESSAGE, packet.host(), packet.port()));
+            //? if >=26.2 {
+            /*mc.setScreenAndShow(confirmScreen);*/
+            //?} else {
+            mc.setScreen(confirmScreen);
+            //?}
+        });
     }
     //?}
 }

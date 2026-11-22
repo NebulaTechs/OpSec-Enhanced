@@ -61,6 +61,7 @@ public final class RuleSettingsScreen {
 
         ConfigCategory category = builder.getOrCreateCategory(OpsecLang.component(OpsecStrings.SCREEN_RULE_SETTINGS_TITLE));
         addIdentityEntries(builder, category, rule);
+        addAppearanceEntries(builder, category, rule);
         addProtectionEntries(builder, category, rule);
         addWhitelistEntries(builder, category, rule);
         addMiscEntries(builder, category, rule);
@@ -301,6 +302,32 @@ public final class RuleSettingsScreen {
             }
         }
         return Optional.empty();
+    }
+
+
+    /**
+     * The rule's own appearance: the color its HUD text is drawn in, and the text
+     * itself.
+     *
+     * <p>Both live on the rule rather than in the global settings, because the HUD
+     * indicator says which server the player is on: a rule that points at a server
+     * with its own profile gets its own label and its own color. The global rule
+     * (the one every unmatched address falls back to) carries the same two values,
+     * so there is still exactly one place to change them.</p>
+     */
+    private static void addAppearanceEntries(ConfigBuilder builder, ConfigCategory category, ServerRule rule) {
+        SpoofSettings settings = rule.getSettings();
+        SubCategoryBuilder group = builder.entryBuilder()
+                .startSubCategory(OpsecLang.component(OpsecStrings.SECTION_APPEARANCE));
+        group.setExpanded(true);
+
+        group.add(builder.entryBuilder()
+                .startStrField(OpsecLang.component(OpsecStrings.OPTION_HUD_TEXT), settings.getHudText())
+                .setTooltip(OpsecLang.component(OpsecStrings.TOOLTIP_HUD_TEXT))
+                .setSaveConsumer(settings::setHudText)
+                .build());
+
+        category.addEntry(group.build());
     }
 
 
@@ -584,6 +611,12 @@ public final class RuleSettingsScreen {
                 .startBooleanToggle(OpsecLang.component(OpsecStrings.OPTION_CONFIRM_TRANSFER), settings.isConfirmTransfer())
                 .setTooltip(OpsecLang.component(OpsecStrings.TOOLTIP_CONFIRM_TRANSFER))
                 .setSaveConsumer(settings::setConfirmTransfer)
+                .build());
+
+        group.add(builder.entryBuilder()
+                .startBooleanToggle(OpsecLang.component(OpsecStrings.OPTION_RESELECT_RULE_ON_TRANSFER), settings.isReselectRuleOnTransfer())
+                .setTooltip(OpsecLang.component(OpsecStrings.TOOLTIP_RESELECT_RULE_ON_TRANSFER))
+                .setSaveConsumer(settings::setReselectRuleOnTransfer)
                 .build());
         //?}
 

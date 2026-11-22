@@ -105,7 +105,10 @@ public abstract class ClientPacketListenerMixin {
         original.call(instance, listener);
     }
 
-    @Inject(method = "handleLogin", at = @At("TAIL"))
+    // The connected server's rule must be in effect before the login handler swaps the
+    // screen: swapping the screen removes the connect screen, which discards the
+    // pending rule.
+    @Inject(method = "handleLogin", at = @At("HEAD"))
     private void onLogin(ClientboundLoginPacket packet, CallbackInfo ci) {
         ClientPacketListener listener = (ClientPacketListener)(Object)this;
         Connection connection = listener.getConnection();

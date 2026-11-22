@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import static aurick.opsec.mod.config.OpsecConstants.Brands.*;
@@ -113,19 +114,6 @@ public class SpoofSettings {
         GLYPHS
     }
 
-    /** Accent color applied to the multiplayer-screen "OpSec" button and the config screen title. */
-    public enum AccentColor {
-        CYAN("§b"),
-        GREEN("§a"),
-        PURPLE("§d"),
-        ORANGE("§6"),
-        RED("§c");
-
-        private final String code;
-        AccentColor(String code) { this.code = code; }
-        public String code() { return code; }
-    }
-
     // Brand spoofing — when true, the client advertises a vanilla brand and blocks
     // ALL outbound custom payloads. When false, the natural Fabric brand passes
     // through and channels are filtered via the Whitelist tab (Block All / Auto /
@@ -152,10 +140,14 @@ public class SpoofSettings {
     // javadoc for why that path can't use this technique).
     private boolean dpiFragmentTlsHello = false;
 
+    /** The theme color, stored as a vanilla color code without the section sign. */
+    private static final String DEFAULT_ACCENT = "b";
+
     // Appearance — purely cosmetic, no effect on protection behavior.
-    private AccentColor accentColor = AccentColor.CYAN;
+    // The HUD text carries its own vanilla color code as a section-sign prefix
+    // (for example "§dIPRULE"), so one field covers both the label and its color.
+    private String hudText = "";
     private boolean compactLayout = false;
-    private boolean showHudIndicator = false;
 
     // Show the OpSec button on the multiplayer server list. On by default: without
     // Mod Menu this button is the only way into the settings in-game, so hiding it
@@ -224,6 +216,9 @@ public class SpoofSettings {
     // Require confirmation before following a server-sent Transfer (1.20.5+) to a
     // different host/port — an unrequested redirect is also an IP disclosure.
     private boolean confirmTransfer = true;
+    // Whether a server-sent Transfer picks the rule of the new target on its own, or
+    // keeps the rule that is in effect for the server that sent it.
+    private boolean reselectRuleOnTransfer = true;
     // The mod's own startup jar-hash check calls out to Modrinth/GitHub/CurseForge.
     // A privacy tool should let you turn off its own network calls too.
     private boolean integrityCheckEnabled = true;
@@ -320,14 +315,21 @@ public class SpoofSettings {
     public boolean isDpiFragmentTlsHello() { return dpiFragmentTlsHello; }
     public void setDpiFragmentTlsHello(boolean enabled) { this.dpiFragmentTlsHello = enabled; }
 
-    public AccentColor getAccentColor() { return accentColor; }
-    public void setAccentColor(AccentColor color) { this.accentColor = color != null ? color : AccentColor.CYAN; }
+    /**
+     * The theme color as a vanilla color code without the section sign, for
+     * example {@code b}.
+     */
+    /**
+     * The text this rule's HUD indicator shows, or an empty string for no indicator.
+     *
+     * <p>Empty is the default, so a rule that was never configured stays silent
+     * instead of advertising the mod on screen.</p>
+     */
+    public String getHudText() { return hudText; }
+    public void setHudText(String text) { this.hudText = text != null ? text : ""; }
 
     public boolean isCompactLayout() { return compactLayout; }
     public void setCompactLayout(boolean compact) { this.compactLayout = compact; }
-
-    public boolean isShowHudIndicator() { return showHudIndicator; }
-    public void setShowHudIndicator(boolean show) { this.showHudIndicator = show; }
 
     public boolean isShowMultiplayerScreenButton() { return showMultiplayerScreenButton; }
     public void setShowMultiplayerScreenButton(boolean show) { this.showMultiplayerScreenButton = show; }
@@ -413,6 +415,8 @@ public class SpoofSettings {
     public void setAutoRandomizeNewAccount(boolean autoRandomizeNewAccount) { this.autoRandomizeNewAccount = autoRandomizeNewAccount; }
     public boolean isConfirmTransfer() { return confirmTransfer; }
     public void setConfirmTransfer(boolean confirmTransfer) { this.confirmTransfer = confirmTransfer; }
+    public boolean isReselectRuleOnTransfer() { return reselectRuleOnTransfer; }
+    public void setReselectRuleOnTransfer(boolean reselectRuleOnTransfer) { this.reselectRuleOnTransfer = reselectRuleOnTransfer; }
 
     public boolean isIntegrityCheckEnabled() { return integrityCheckEnabled; }
     public void setIntegrityCheckEnabled(boolean integrityCheckEnabled) { this.integrityCheckEnabled = integrityCheckEnabled; }
@@ -512,9 +516,8 @@ public class SpoofSettings {
         }
         json.add("lunarBrandHistory", lunarHistoryArray);
         json.addProperty("dpiFragmentTlsHello", dpiFragmentTlsHello);
-        json.addProperty("accentColor", accentColor.name());
+        json.addProperty("hudText", hudText);
         json.addProperty("compactLayout", compactLayout);
-        json.addProperty("showHudIndicator", showHudIndicator);
         json.addProperty("showMultiplayerScreenButton", showMultiplayerScreenButton);
         json.addProperty("isolatePackCache", isolatePackCache);
         json.addProperty("blockLocalPackUrls", blockLocalPackUrls);
@@ -542,6 +545,7 @@ public class SpoofSettings {
         json.addProperty("autoPurgePackCache", autoPurgePackCache);
         json.addProperty("autoRandomizeNewAccount", autoRandomizeNewAccount);
         json.addProperty("confirmTransfer", confirmTransfer);
+        json.addProperty("reselectRuleOnTransfer", reselectRuleOnTransfer);
         json.addProperty("integrityCheckEnabled", integrityCheckEnabled);
         json.addProperty("gameProxyType", gameProxyType.name());
         json.addProperty("gameProxyHost", gameProxyHost);
@@ -608,15 +612,28 @@ public class SpoofSettings {
             s.pushLunarBrandHistory(s.lunarVersionSuffix);
         }
         if (json.has("dpiFragmentTlsHello")) s.dpiFragmentTlsHello = json.get("dpiFragmentTlsHello").getAsBoolean();
+        if (json.has("hudText")) s.hudText = json.get("hudText").getAsString();
+        // The old build stored the HUD as a global on/off switch with a fixed text.
+        // Fold it into the per-rule text field.
+        if (s.hudText.isEmpty() && json.has("showHudIndicator")
+                && json.get("showHudIndicator").getAsBoolean()) {
+            s.hudText = "§" + DEFAULT_ACCENT + "OpSec: " + s.getEffectiveBrand();
+        }
+        // The color used to be a separate field; fold it into the text as a
+        // section-sign prefix so one field carries both. Any prefix the text
+        // already carries is dropped first, so re-reading a file that still has
+        // the old key cannot stack prefixes on top of each other. A rule with no
+        // text has nothing to color, so its accent is dropped rather than left
+        // behind as a lone color code that would look like an enabled HUD.
         if (json.has("accentColor")) {
-            try {
-                s.accentColor = AccentColor.valueOf(json.get("accentColor").getAsString());
-            } catch (IllegalArgumentException e) {
-                s.accentColor = AccentColor.CYAN;
+            String raw = json.get("accentColor").getAsString().trim();
+            if (!raw.isEmpty() && !s.hudText.isEmpty()) {
+                String migrated = migrateAccent(raw);
+                String code = migrated != null ? migrated : normalizeAccent(raw);
+                s.hudText = "§" + code + stripColorPrefix(s.hudText);
             }
         }
         if (json.has("compactLayout")) s.compactLayout = json.get("compactLayout").getAsBoolean();
-        if (json.has("showHudIndicator")) s.showHudIndicator = json.get("showHudIndicator").getAsBoolean();
         if (json.has("showMultiplayerScreenButton")) s.showMultiplayerScreenButton = json.get("showMultiplayerScreenButton").getAsBoolean();
         if (json.has("isolatePackCache")) s.isolatePackCache = json.get("isolatePackCache").getAsBoolean();
         if (json.has("blockLocalPackUrls")) s.blockLocalPackUrls = json.get("blockLocalPackUrls").getAsBoolean();
@@ -680,6 +697,7 @@ public class SpoofSettings {
         if (json.has("autoPurgePackCache")) s.autoPurgePackCache = json.get("autoPurgePackCache").getAsBoolean();
         if (json.has("autoRandomizeNewAccount")) s.autoRandomizeNewAccount = json.get("autoRandomizeNewAccount").getAsBoolean();
         if (json.has("confirmTransfer")) s.confirmTransfer = json.get("confirmTransfer").getAsBoolean();
+        if (json.has("reselectRuleOnTransfer")) s.reselectRuleOnTransfer = json.get("reselectRuleOnTransfer").getAsBoolean();
         if (json.has("integrityCheckEnabled")) s.integrityCheckEnabled = json.get("integrityCheckEnabled").getAsBoolean();
         if (json.has("gameProxyType")) {
             try {
@@ -744,15 +762,62 @@ public class SpoofSettings {
         return s;
     }
     
+    /** Maps the accent color names the old build wrote to their vanilla color codes. */
+    private static String migrateAccent(String legacy) {
+        return switch (legacy.trim().toUpperCase(Locale.ROOT)) {
+            case "CYAN" -> "b";
+            case "GREEN" -> "a";
+            case "PURPLE" -> "d";
+            case "ORANGE" -> "6";
+            case "RED" -> "c";
+            default -> null;
+        };
+    }
+
+    /**
+     * Removes a leading section-sign color code, so a color can be folded into a
+     * text that already carries one without ending up with two of them.
+     */
+    private static String stripColorPrefix(String text) {
+        if (text == null || text.length() < 2 || text.charAt(0) != '§') {
+            return text != null ? text : "";
+        }
+        return text.substring(2);
+    }
+
+    /**
+     * Accepts a vanilla color code with or without the section sign and stores it
+     * without one. Anything that is not one of the sixteen vanilla color codes
+     * falls back to the default, so a bad value never turns into a stray
+     * formatting code in the HUD.
+     */
+    private static String normalizeAccent(String code) {
+        if (code == null || code.isBlank()) {
+            return DEFAULT_ACCENT;
+        }
+        String trimmed = code.trim();
+        if (trimmed.charAt(0) == '§') {
+            trimmed = trimmed.substring(1);
+        }
+        if (trimmed.isEmpty() || !isVanillaColorCode(trimmed.charAt(0))) {
+            return DEFAULT_ACCENT;
+        }
+        return trimmed;
+    }
+
+    /** True for the sixteen vanilla color codes, 0-9 and a-f. */
+    public static boolean isVanillaColorCode(char code) {
+        return (code >= '0' && code <= '9') || (code >= 'a' && code <= 'f');
+    }
+
     public void copyFrom(SpoofSettings other) {
         this.spoofAsVanilla = other.spoofAsVanilla;
         this.brandOverride = other.brandOverride;
         this.lunarVersionSuffix = other.lunarVersionSuffix;
         this.lunarBrandHistory = new ArrayList<>(other.lunarBrandHistory);
         this.dpiFragmentTlsHello = other.dpiFragmentTlsHello;
-        this.accentColor = other.accentColor;
+        this.hudText = other.hudText;
         this.compactLayout = other.compactLayout;
-        this.showHudIndicator = other.showHudIndicator;
         this.showMultiplayerScreenButton = other.showMultiplayerScreenButton;
         this.isolatePackCache = other.isolatePackCache;
         this.blockLocalPackUrls = other.blockLocalPackUrls;
@@ -780,6 +845,7 @@ public class SpoofSettings {
         this.autoPurgePackCache = other.autoPurgePackCache;
         this.autoRandomizeNewAccount = other.autoRandomizeNewAccount;
         this.confirmTransfer = other.confirmTransfer;
+        this.reselectRuleOnTransfer = other.reselectRuleOnTransfer;
         this.integrityCheckEnabled = other.integrityCheckEnabled;
         this.gameProxyType = other.gameProxyType;
         this.gameProxyHost = other.gameProxyHost;

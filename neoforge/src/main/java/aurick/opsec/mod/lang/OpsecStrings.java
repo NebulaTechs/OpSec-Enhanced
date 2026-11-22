@@ -53,11 +53,11 @@ public final class OpsecStrings {
     public static final String TOOLTIP_DPI_FRAGMENT_TLS = "opsec.option.dpiFragmentTls.tooltip";
 
     public static final String SECTION_APPEARANCE = "opsec.section.appearance";
-    public static final String OPTION_ACCENT_COLOR = "opsec.option.accentColor";
+    public static final String SECTION_INTERFACE = "opsec.section.interface";
+    public static final String OPTION_HUD_TEXT = "opsec.option.hudText";
+    public static final String TOOLTIP_HUD_TEXT = "opsec.option.hudText.tooltip";
     public static final String OPTION_COMPACT_LAYOUT = "opsec.option.compactLayout";
     public static final String TOOLTIP_COMPACT_LAYOUT = "opsec.option.compactLayout.tooltip";
-    public static final String OPTION_SHOW_HUD = "opsec.option.showHud";
-    public static final String TOOLTIP_SHOW_HUD = "opsec.option.showHud.tooltip";
     public static final String OPTION_SHOW_MULTIPLAYER_BUTTON = "opsec.option.showMultiplayerButton";
     public static final String TOOLTIP_SHOW_MULTIPLAYER_BUTTON = "opsec.option.showMultiplayerButton.tooltip";
 
@@ -127,6 +127,8 @@ public final class OpsecStrings {
     public static final String TOOLTIP_COMMAND_HISTORY_GUARD = "opsec.option.commandHistoryGuard.tooltip";
     public static final String OPTION_CONFIRM_TRANSFER = "opsec.option.confirmTransfer";
     public static final String TOOLTIP_CONFIRM_TRANSFER = "opsec.option.confirmTransfer.tooltip";
+    public static final String OPTION_RESELECT_RULE_ON_TRANSFER = "opsec.option.reselectRuleOnTransfer";
+    public static final String TOOLTIP_RESELECT_RULE_ON_TRANSFER = "opsec.option.reselectRuleOnTransfer.tooltip";
     public static final String CONFIRM_TRANSFER_TITLE = "opsec.confirmTransfer.title";
     public static final String CONFIRM_TRANSFER_MESSAGE = "opsec.confirmTransfer.message";
 
@@ -347,6 +349,9 @@ public final class OpsecStrings {
     public static final String HUB_ACCOUNT_MANAGER_DESC = "opsec.hub.accountManager.desc";
     public static final String HUB_CONNECTED = "opsec.hub.connected";
     public static final String HUB_NOT_CONNECTED = "opsec.hub.notConnected";
+    public static final String HUB_RESOLVED = "opsec.hub.resolved";
+    public static final String HUB_EFFECTIVE_RULE = "opsec.hub.effectiveRule";
+    public static final String HUB_RULE_GLOBAL = "opsec.hub.ruleGlobal";
     public static final String HUB_SETTINGS = "opsec.hub.settings";
     public static final String HUB_SETTINGS_DESC = "opsec.hub.settings.desc";
 

@@ -19,9 +19,10 @@ import java.util.regex.PatternSyntaxException;
  * <p>The matcher input is the address the player typed (the hostname or IP literal they
  * entered in the connect screen), <strong>not</strong> whatever the connection ended up
  * resolving to. A player typing {@code mc.example.com} matches a rule for that domain
- * even when the connection goes through a proxy, a redirect or a multi-A-record DNS
- * answer. The resolved IP is only used as a secondary input, so a rule can also target
- * an IP literal directly.</p>
+ * even when the connection goes through a proxy, is redirected by the server, or resolves
+ * to a different address than it did yesterday. The resolved address is not an input at
+ * all, so a rule for one IP cannot take over an unrelated hostname that happens to
+ * resolve to it.</p>
  */
 public class ServerRule {
 
@@ -31,7 +32,7 @@ public class ServerRule {
         EXACT,
         /** The pattern is a Java regex that must fully match the typed address. */
         REGEX,
-        /** The pattern is an IP literal and must equal the resolved address. */
+        /** The pattern is an IP literal that must equal the typed address. */
         IP,
         /**
          * The mandatory global fallback rule. It matches every server, carries the
@@ -101,12 +102,19 @@ public class ServerRule {
     /**
      * Tests this rule against one connection.
      *
+     * <p>The comparison is made against the address the player typed, and against nothing
+     * else. The resolved IP is deliberately not an input: a rule therefore describes
+     * <em>the name the player connected to</em>, not the machine behind it. A hostname
+     * the player typed keeps its own rule even when the connection is dialled through a
+     * proxy, is redirected by the server, or resolves to a different address than it did
+     * yesterday — and a rule written for one IP cannot silently take over an unrelated
+     * hostname that happens to resolve to it.</p>
+     *
      * @param host the address the player typed (hostname or IP literal), may be null
      * @param port the port the player connected to, {@code 0} when unknown
-     * @param ip   the resolved IP address, may be null
      * @return true when this rule applies to that connection
      */
-    public boolean matches(String host, int port, String ip) {
+    public boolean matches(String host, int port) {
         if (!enabled) {
             return false;
         }
@@ -115,9 +123,9 @@ public class ServerRule {
         }
         for (String p : splitPatterns(pattern)) {
             boolean hit = switch (matchType) {
-                case EXACT -> matchesExact(p, host, port, ip);
-                case REGEX -> matchesRegex(p, host, ip);
-                case IP -> matchesIp(p, host, ip);
+                case EXACT -> matchesExact(p, host, port);
+                case REGEX -> matchesRegex(p, host);
+                case IP -> matchesIp(p, host);
                 case ANY -> true;
             };
             if (hit) {
@@ -171,7 +179,7 @@ public class ServerRule {
         }
     }
 
-    private static boolean matchesExact(String p, String host, int port, String ip) {
+    private static boolean matchesExact(String p, String host, int port) {
         String wantHost = p;
         int wantPort = -1;
         int colon = p.lastIndexOf(':');
@@ -194,14 +202,10 @@ public class ServerRule {
             return false;
         }
         String typed = normalize(host);
-        if (!typed.isEmpty() && typed.equalsIgnoreCase(wantHost)) {
-            return true;
-        }
-        String resolved = normalize(ip);
-        return !resolved.isEmpty() && resolved.equalsIgnoreCase(wantHost);
+        return !typed.isEmpty() && typed.equalsIgnoreCase(wantHost);
     }
 
-    private static boolean matchesRegex(String p, String host, String ip) {
+    private static boolean matchesRegex(String p, String host) {
         Pattern compiled;
         try {
             compiled = Pattern.compile(p);
@@ -211,18 +215,19 @@ public class ServerRule {
             return false;
         }
         String typed = normalize(host);
-        if (!typed.isEmpty() && compiled.matcher(typed).matches()) {
-            return true;
-        }
-        String resolved = normalize(ip);
-        return !resolved.isEmpty() && compiled.matcher(resolved).matches();
+        return !typed.isEmpty() && compiled.matcher(typed).matches();
     }
 
-    private static boolean matchesIp(String p, String host, String ip) {
+    /**
+     * Matches an IP-literal pattern against the address the player typed.
+     *
+     * <p>No fallback to the resolved address: a rule written for one IP must not take
+     * over a hostname that happens to resolve to it.</p>
+     */
+    private static boolean matchesIp(String p, String host) {
         String want = normalize(p);
-        String resolved = normalize(ip);
-        if (!resolved.isEmpty() && resolved.equals(want)) {
-            return true;
+        if (want.isEmpty()) {
+            return false;
         }
         String typed = normalize(host);
         return !typed.isEmpty() && typed.equals(want);

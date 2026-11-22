@@ -68,9 +68,13 @@ public abstract class ClientCommonPacketListenerImplMixin {
     private void opsec$onTransfer(net.minecraft.network.protocol.common.ClientboundTransferPacket packet, CallbackInfo ci) {
         if (packet == opsec$approvedTransfer) {
             opsec$approvedTransfer = null;
+            aurick.opsec.mod.config.OpsecConfig.getInstance()
+                    .pinRuleForTransfer(packet.host(), packet.port());
             return;
         }
         if (!aurick.opsec.mod.config.OpsecConfig.getInstance().getSettings().isConfirmTransfer()) {
+            aurick.opsec.mod.config.OpsecConfig.getInstance()
+                    .pinRuleForTransfer(packet.host(), packet.port());
             return;
         }
         ci.cancel();

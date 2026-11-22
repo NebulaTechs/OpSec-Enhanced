@@ -37,8 +37,10 @@ public class OpsecConfig {
         FabricLoader.getInstance().isModLoaded("exploitpreventer");
 
     /** Current config schema version. A file without a {@code version} key is v1 and is
-     *  migrated on load; a file newer than this is refused and left untouched. */
-    public static final int CONFIG_VERSION = 2;
+     *  migrated on load; a file newer than this is refused and left untouched.
+     *  v3 dropped the separate accent-color field in favour of a color code at the
+     *  front of the HUD text. */
+    public static final int CONFIG_VERSION = 3;
 
     // Chat signing and telemetry blocking overlap with dedicated mods. When one is
     // present OpSec stands down on the shared feature (greys the control out) rather
@@ -93,6 +95,22 @@ public class OpsecConfig {
     private final List<ServerRule> serverRules = new CopyOnWriteArrayList<>();
 
     private volatile ServerRule activeRule = null;
+
+    // The rule picked for the connection attempt that is currently being set up. It is
+    // deliberately kept apart from the rule of the server the client is connected to:
+    // an attempt that fails or is cancelled has to be discarded without touching the
+    // connected server's rule, and the rule of an in-flight attempt has to be
+    // re-resolved once the address it resolves to is known -- an IP rule cannot be
+    // matched from the typed hostname alone.
+    private volatile ServerRule pendingRule = null;
+
+    // The rule a server-initiated transfer is pinned to, and the address that transfer
+    // names. Set just before the old connection is closed (closing it drops that
+    // server's rule) and consumed by the rule lookup for that one address.
+    private volatile ServerRule pinnedRule = null;
+    private volatile String pinnedHost = null;
+    private volatile int pinnedPort = 0;
+    private volatile boolean pinConsumed = false;
 
     // Servers explicitly exempted from Auto-Purge Pack Cache On Exit (issue #23).
     // Deliberately a separate, lightweight set rather than a SpoofSettings field on
@@ -313,6 +331,7 @@ public class OpsecConfig {
     private void resetToDefaults() {
         serverRules.clear();
         activeRule = null;
+        pendingRule = null;
         packCacheTrustedServers.clear();
         ServerRule any = new ServerRule(ServerRule.MatchType.ANY, "");
         serverRules.add(any);
@@ -441,6 +460,24 @@ public class OpsecConfig {
         return settings;
     }
 
+    /**
+     * Recomputes the settings the whole mod reads through {@link #getSettings()}.
+     *
+     * <p>An attempt that is being set up wins over the server the client is connected
+     * to: the consumers that run while a connection is opening must see the rule of the
+     * server that is being opened. Once the attempt is over the connected server's rule
+     * takes over again, and with no server at all the global baseline applies.</p>
+     */
+    private void refreshEffectiveSettings() {
+        ServerRule pending = pendingRule;
+        if (pending != null) {
+            this.settings = pending.getSettings();
+            return;
+        }
+        ServerRule active = activeRule;
+        this.settings = active != null ? active.getSettings() : getGlobalSettings();
+    }
+
     /** The mandatory global fallback rule, or null when the rule list holds none. */
     public ServerRule getAnyRule() {
         for (ServerRule rule : serverRules) {
@@ -493,27 +530,41 @@ public class OpsecConfig {
             this.currentServerIp = null;
             this.currentServerPort = 0;
             this.activeRule = null;
-            this.settings = getGlobalSettings();
+            // The pending rule is deliberately left alone here: a new attempt may already
+            // be under way while the previous connection is still closing, and discarding
+            // the new attempt's rule would hand the wrong settings to the packets of the
+            // connection that is being opened.
+            refreshEffectiveSettings();
             return;
         }
         this.currentServer = host != null ? host : ip;
         this.currentServerIp = ip;
         this.currentServerPort = port;
-        ServerRule matched = findMatchingRule(host, port, ip);
+        ServerRule matched = findMatchingRule(host, port);
         this.activeRule = matched;
-        this.settings = matched != null ? matched.getSettings() : getGlobalSettings();
+        // The login succeeded, so the attempt is over: the connected server's rule is
+        // the one that applies from here on.
+        this.pendingRule = null;
+        this.pinnedRule = null;
+        this.pinnedHost = null;
+        this.pinnedPort = 0;
+        this.pinConsumed = false;
+        refreshEffectiveSettings();
         if (matched != null) {
             Opsec.LOGGER.info("[OpSec] Server rule matched: {} {}", matched.getMatchType(), matched.getPattern());
         }
     }
 
     /** The first rule whose matcher accepts the given address, falling back to the ANY rule. */
-    public ServerRule findMatchingRule(String host, int port, String ip) {
+    public ServerRule findMatchingRule(String host, int port) {
+        if (isPinnedFor(host, port)) {
+            return pinnedRule;
+        }
         for (ServerRule rule : serverRules) {
             if (rule.isAnyRule()) {
                 continue;
             }
-            if (rule.matches(host, port, ip)) {
+            if (rule.matches(host, port)) {
                 return rule;
             }
         }
@@ -527,28 +578,146 @@ public class OpsecConfig {
      * the rule of the server that is being opened, not the rule of the server that was
      * connected before. The ANY rule is the fallback when the address matches nothing.</p>
      */
-    public SpoofSettings settingsForTarget(String host, int port, String ip) {
-        ServerRule matched = findMatchingRule(host, port, ip);
+    public SpoofSettings settingsForTarget(String host, int port) {
+        ServerRule matched = findMatchingRule(host, port);
         return matched != null ? matched.getSettings() : getGlobalSettings();
     }
 
     /**
      * Selects the rule that matches an address the player is about to connect to.
      *
-     * <p>The rule has to be picked before the connection is opened: the game proxy and the
-     * client-information normalizer both run while the connection is still being set up,
-     * and they would otherwise read the global baseline instead of the server's own rule.
-     * Unlike {@link #setCurrentServer(String, int, String)} this does not record the
-     * server as connected -- that only happens once the login succeeds.</p>
+     * <p>The rule has to be picked before the connection is opened: the game proxy and
+     * the client-information normalizer both run while the connection is still being set
+     * up, and they would otherwise read the global baseline instead of the server's own
+     * rule. Unlike {@link #setCurrentServer(String, int, String)} this does not record
+     * the server as connected -- that only happens once the login succeeds -- and it
+     * only fills the pending slot, so a failed or cancelled attempt can be discarded
+     * again without disturbing the connected server's rule.</p>
+     *
+     * @param host the address the player typed
+     * @param port the port that is being connected to
      */
-    public void selectRuleFor(String host, int port, String ip) {
-        ServerRule matched = findMatchingRule(host, port, ip);
+    public void selectRuleFor(String host, int port) {
+        ServerRule matched = findMatchingRule(host, port);
         if (matched == null) {
             return;
         }
-        this.activeRule = matched;
-        this.settings = matched.getSettings();
+        this.pendingRule = matched;
+        refreshEffectiveSettings();
         Opsec.LOGGER.info("[OpSec] Server rule selected: {} {}", matched.getMatchType(), matched.getPattern());
+    }
+
+    /**
+     * Starts a connection attempt and selects the rule that applies to it.
+     *
+     * <p>A transfer keeps the pin that was set for it, so the target is matched against
+     * the rule of the server that sent it. Every other attempt drops it: a pin only
+     * ever describes one transfer, and a stale one would otherwise hand the rule of
+     * some earlier server to a later connection.</p>
+     *
+     * @param host the address the player typed
+     * @param port the port that is being connected to
+     * @param transferred true when the attempt is the target of a server-initiated transfer
+     */
+    public void beginConnectionAttempt(String host, int port, boolean transferred) {
+        if (transferred && isPinFor(host, port)) {
+            this.pinConsumed = true;
+        } else {
+            this.pinnedRule = null;
+            this.pinnedHost = null;
+            this.pinnedPort = 0;
+            this.pinConsumed = false;
+        }
+        selectRuleFor(host, port);
+    }
+
+    /**
+     * Pins the current rule for the connection attempt that a server-initiated transfer
+     * is about to start.
+     *
+     * <p>Called just before the transfer is carried out, because by the time the new
+     * connection is being set up the rule of the server that handed the player over is
+     * already gone -- the old connection is closed first, and closing it drops that
+     * server's rule. The pin is bound to the address the transfer names, so a
+     * background ping of some other server is not affected by it.</p>
+     *
+     * <p>Does nothing when the rule in effect asks for the new target to be matched on
+     * its own, which is the default.</p>
+     */
+    public void pinRuleForTransfer(String host, int port) {
+        ServerRule current = activeRule;
+        if (current == null) {
+            return;
+        }
+        if (current.getSettings().isReselectRuleOnTransfer()) {
+            return;
+        }
+        this.pinnedRule = current;
+        this.pinnedHost = asciiHost(host);
+        this.pinnedPort = port;
+        this.pinConsumed = false;
+        Opsec.LOGGER.info("[OpSec] Transfer: keeping the rule {} {} for {}",
+                current.getMatchType(), current.getPattern(), host);
+    }
+
+    private boolean isPinFor(String host, int port) {
+        String pinned = pinnedHost;
+        if (pinnedRule == null || pinned == null || host == null) {
+            return false;
+        }
+        if (!pinned.equals(asciiHost(host))) {
+            return false;
+        }
+        return pinnedPort <= 0 || port <= 0 || pinnedPort == port;
+    }
+
+    /**
+     * The address in the form the client dials it in.
+     *
+     * <p>A transfer names its target as a raw string, while the address the connection
+     * starts with goes through {@code ServerAddress}, which converts an international
+     * domain name to its ASCII form. Both sides of the pin have to be reduced the same
+     * way, or a transfer to an international name would not find its own pin.</p>
+     */
+    private static String asciiHost(String host) {
+        if (host == null) {
+            return null;
+        }
+        String trimmed = host.trim();
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+            trimmed = trimmed.substring(1, trimmed.length() - 1);
+        }
+        try {
+            return java.net.IDN.toASCII(trimmed).toLowerCase(java.util.Locale.ROOT);
+        } catch (IllegalArgumentException e) {
+            return "";
+        }
+    }
+    private boolean isPinnedFor(String host, int port) {
+        return pinConsumed && isPinFor(host, port);
+    }
+
+    /**
+     * Discards the rule that was selected for a connection attempt that never reached
+     * the login stage -- the attempt failed, timed out or was cancelled by the player.
+     *
+     * <p>Without this the rule of the server the player tried to join would stay in
+     * effect while the client sits on the multiplayer screen, and a background
+     * server-list ping would read it as if it belonged to the pinged server.</p>
+     */
+    public void clearPendingRule() {
+        if (pinConsumed) {
+            this.pinnedRule = null;
+            this.pinnedHost = null;
+            this.pinnedPort = 0;
+            this.pinConsumed = false;
+        }
+        if (pendingRule == null) {
+            return;
+        }
+        this.pendingRule = null;
+        refreshEffectiveSettings();
+        Opsec.LOGGER.info("[OpSec] Connection attempt ended; pending rule discarded");
     }
 
     public String getCurrentServer() {
@@ -581,7 +750,7 @@ public class OpsecConfig {
 
     /** The rule that matched the current connection, or null when none did. */
     public ServerRule getActiveRule() {
-        return activeRule;
+        return pendingRule != null ? pendingRule : activeRule;
     }
 
     /** True when an EXACT rule exists for the address of the current connection. */
@@ -625,10 +794,19 @@ public class OpsecConfig {
             return;
         }
         serverRules.remove(rule);
+        if (pendingRule == rule) {
+            pendingRule = null;
+        }
         if (activeRule == rule) {
             activeRule = null;
-            settings = getGlobalSettings();
         }
+        if (pinnedRule == rule) {
+            pinnedRule = null;
+            pinnedHost = null;
+            pinnedPort = 0;
+            pinConsumed = false;
+        }
+        refreshEffectiveSettings();
         save();
     }
 
@@ -705,6 +883,7 @@ public class OpsecConfig {
                     && rule.getPattern().equalsIgnoreCase(currentServer)) {
                 rule.copySettingsFrom(this.settings);
                 this.activeRule = rule;
+                refreshEffectiveSettings();
                 save();
                 return;
             }
@@ -718,6 +897,7 @@ public class OpsecConfig {
             serverRules.add(anyIndex, rule);
         }
         this.activeRule = rule;
+        refreshEffectiveSettings();
         save();
     }
 
@@ -729,10 +909,19 @@ public class OpsecConfig {
             if (rule.getMatchType() == ServerRule.MatchType.EXACT
                     && rule.getPattern().equalsIgnoreCase(currentServer)) {
                 serverRules.remove(rule);
+                if (pendingRule == rule) {
+                    pendingRule = null;
+                }
                 if (activeRule == rule) {
                     activeRule = null;
-                    settings = getGlobalSettings();
                 }
+                if (pinnedRule == rule) {
+                    pinnedRule = null;
+                    pinnedHost = null;
+                    pinnedPort = 0;
+                    pinConsumed = false;
+                }
+                refreshEffectiveSettings();
                 save();
                 return;
             }

@@ -36,19 +36,20 @@ public class ConnectScreenMixin {
     @Inject(method = "startConnecting", at = @At("HEAD"))
     private static void opsec$selectRule(Screen parent, Minecraft minecraft, ServerAddress address, ServerData data,
             boolean isQuickPlay, TransferState transferState, CallbackInfo ci) {
-        opsec$selectRuleFor(address);
+        opsec$selectRuleFor(address, transferState != null);
     }
 
     /**
-     * Picks the server rule for the address the player is about to connect to, before the
-     * connection is opened -- the game proxy and the client-information normalizer both
-     * read the settings while the connection is still being set up.
+     * Selects the rule for the connection attempt that is about to start.
+     *
+     * <p>Only the typed address is known here. The resolved address is not known yet
+     * and is applied later by the handshake-listener mixin.</p>
      */
     @Unique
-    private static void opsec$selectRuleFor(ServerAddress address) {
+    private static void opsec$selectRuleFor(ServerAddress address, boolean transferred) {
         if (address == null) {
             return;
         }
-        OpsecConfig.getInstance().selectRuleFor(address.getHost(), address.getPort(), null);
+        OpsecConfig.getInstance().beginConnectionAttempt(address.getHost(), address.getPort(), transferred);
     }
 }

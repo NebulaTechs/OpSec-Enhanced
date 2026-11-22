@@ -10,6 +10,8 @@
 		"ConnectionTargetMixin",
 		"ClientCommonPacketListenerImplMixin",
 		"ConnectScreenMixin",
+		"ClientHandshakePacketListenerImplMixin",
+		"ScreenMixin",
 		"DownloadQueueMixin",
 		"DownloadedPackSourceMixin",
 		"DownloadedPackSourceAccessor",

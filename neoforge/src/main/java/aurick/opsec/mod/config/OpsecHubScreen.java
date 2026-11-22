@@ -2,6 +2,8 @@ package aurick.opsec.mod.config;
 
 import aurick.opsec.mod.lang.OpsecLang;
 import aurick.opsec.mod.lang.OpsecStrings;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
@@ -47,18 +49,45 @@ public class OpsecHubScreen extends Screen implements OpsecScreens.Marker {
                 () -> show(SettingsScreen.create(this)));
 
         // Connection state — read-only. The rule editor is where settings change.
+        List<String> details = new ArrayList<>();
+        if (config.hasActiveServer()) {
+            String ip = config.getCurrentServerIp();
+            if (ip != null && !ip.isEmpty()) {
+                details.add(OpsecLang.tr(OpsecStrings.HUB_RESOLVED, ip));
+            }
+            details.add(OpsecLang.tr(OpsecStrings.HUB_EFFECTIVE_RULE, effectiveRuleLabel()));
+        }
         String statusText = config.hasActiveServer()
                 ? OpsecLang.tr(OpsecStrings.HUB_CONNECTED, config.getCurrentServer())
                 : OpsecLang.tr(OpsecStrings.HUB_NOT_CONNECTED);
-        StringWidget status = new StringWidget(this.font.width(statusText), 10,
-                Component.literal(statusText), this.font);
-        status.setX(this.width / 2 - status.getWidth() / 2);
-        status.setY(this.height - 52);
-        this.addRenderableWidget(status);
+
+        int buttonY = this.height - 28;
+        int lineY = buttonY - 12;
+        for (int i = details.size() - 1; i >= 0; i--) {
+            this.addRenderableWidget(centeredText(details.get(i), lineY));
+            lineY -= 12;
+        }
+        this.addRenderableWidget(centeredText(statusText, lineY));
 
         this.addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, button -> this.onClose())
-                .bounds(this.width / 2 - 100, this.height - 28, 200, 20)
+                .bounds(this.width / 2 - 100, buttonY, 200, 20)
                 .build());
+    }
+
+    private String effectiveRuleLabel() {
+        ServerRule effective = config.getActiveRule();
+        if (effective == null || effective.isAnyRule()) {
+            return OpsecLang.tr(OpsecStrings.HUB_RULE_GLOBAL);
+        }
+        return effective.getMatchType().name() + " " + effective.getPattern();
+    }
+
+    private StringWidget centeredText(String text, int y) {
+        StringWidget widget = new StringWidget(this.font.width(text), 10,
+                Component.literal(text), this.font);
+        widget.setX(this.width / 2 - widget.getWidth() / 2);
+        widget.setY(y);
+        return widget;
     }
 
     private int addCard(int y, String titleKey, String descriptionKey, Runnable action) {

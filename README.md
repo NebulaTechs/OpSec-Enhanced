@@ -41,7 +41,7 @@
 - **Encrypted Account Storage** - Saved session/refresh tokens are AES-256-GCM encrypted at rest instead of stored as plaintext, with an owner-only-permissioned key file
 - **Skin/Cape Correlation Alerts** - Warns when two saved accounts share the same active skin or cape texture, since that's a real way to link a "main" and an "alt" together
 - **Chat Link/Command Guard** - Requires confirmation before a clicked chat/sign/book message copies to your clipboard or runs a command (vanilla does both instantly, unlike `OPEN_URL`), plus an extra heads-up before opening links shaped like phishing/IP-grabber patterns (raw IP, punycode, look-alike characters)
-- **Per-Server Rules** - Every option can be set per server instead of globally, so a server you trust doesn't need the same protection as one you don't. Rules match by exact address, regex, or resolved IP, and a mandatory "Default (all servers)" rule holds the client-wide baseline
+- **Per-Server Rules** - Every option can be set per server instead of globally, so a server you trust doesn't need the same protection as one you don't. Rules match the address you type, by exact address, regex, or IP literal, and a mandatory "Default (all servers)" rule holds the client-wide baseline
 - **AntiExploitPreventer Ghost-Sign Detection** - Detects AEP's ghost-sign probe (a server plants a sign on the block you stand on and reads the text your client sends back) and alerts you instead of letting it pass unnoticed
 - **Per-Server Pack Cache Isolation** - Extends Isolate Pack Cache to also bucket by server address, closing a side-channel where two colluding servers could share a resource-pack push ID to detect a returning player across servers even without sharing an account
 - **Sensitive Log Redaction** - Strips token-shaped strings from logged authentication error responses before they hit the log file
@@ -116,7 +116,9 @@ Each rule matches a server address in one of three ways:
 |------------|--------------|
 | **EXACT** | The address you typed equals the pattern (optionally with `:port`) |
 | **REGEX** | The pattern is a Java regular expression that fully matches the address |
-| **IP** | The pattern is an IP literal equal to the address the hostname resolved to |
+| **IP** | The pattern is an IP literal equal to the address you typed |
+
+All three match on the address **you typed**, not on the address it resolved to — they are three ways of writing the same comparison, not three different sources of truth. An `IP` rule therefore covers a server only when you connect by its IP literal, and a rule for a hostname is never silently taken over by a rule for the address that hostname happens to point at today. The address the connection resolved to is still shown in the hub, next to the rule that is in effect.
 
 A rule's **Applies To** field takes a comma-separated list of addresses; in REGEX mode each entry is matched separately. A literal comma inside a regex is written `\x2c`.
 
@@ -142,6 +144,7 @@ These options are **per server** — every rule carries its own copy, so one rul
 | **Command History Guard** | Enable/disable [command history redaction](#command-history-guard) (default: on) |
 | **Block Cookies** | Enable/disable [cookie blocking](#block-cookies) (MC 1.20.5+, default: on) |
 | **Confirm Transfer** | Require confirmation before following a server's `Transfer` request (MC 1.20.5+) |
+| **Reselect Rule After Transfer** | Whether a server-sent `Transfer` picks the rule of the new target on its own, or keeps the rule of the server that sent it (MC 1.20.5+, default: on) |
 | **Client Information Normalizer** | Enable/disable [reporting a fixed common client info combo](#client-information-normalizer) (default: on) |
 | **Scrub Pack Download Headers** | Enable/disable [neutralizing per-player pack-download headers](#scrub-pack-download-headers) (MC 1.20.3+, default: on) |
 | **Auto-Purge Pack Cache On Exit** | Enable/disable [wiping the pack cache on game close](#auto-purge-pack-cache-on-exit) (default: off) |
@@ -162,10 +165,19 @@ These options are **client-wide** — they apply everywhere and are not tied to 
 
 | Setting | Description |
 |---------|-------------|
-| **Accent Color** | Cosmetic accent used for the HUD indicator and the multiplayer-screen "OpSec" button |
 | **Compact Layout** | Tighter row spacing in this settings menu |
-| **Show HUD Indicator** | Small on-screen label showing your current spoof brand. Rendered via a direct Mixin on 1.20.1-1.21.11 (reliable). On 26.1+, uses Fabric API's newer HUD pipeline instead since vanilla's own rendering internals there change shape between patches — **experimental, less tested; report back if it doesn't show up** |
 | **Show button on multiplayer screen** | Show the `OpSec` button on the multiplayer server list. On by default — without Mod Menu this button is the only way into the settings in-game |
+
+The HUD indicator's **text** and **color** are per-rule, not global: each server rule
+carries its own `hudText` and `accentColor` (a vanilla color code such as `b`), so
+every server can be labelled differently. Leave the text empty and the indicator
+shows nothing. The global rule — the one every unmatched address falls back to —
+carries the same two values, so there is still exactly one place to change them.
+
+| Setting | Description |
+|---------|-------------|
+| **Theme Color** | The color the rule's HUD text is drawn in, as a vanilla color code (`b`, `d`, `6`, …) |
+| **HUD Text** | Text shown in the top-left corner while the rule is active. Empty means nothing is shown. Vanilla color codes (`§b`) can be used inside the text itself |
 
 #### Settings Screen (Streamer Mode)
 
@@ -242,13 +254,19 @@ Rules replace that with per-server settings. Each rule carries its own complete 
 
 - **EXACT** matches the address you typed, optionally with `:port` — `play.example.com:25565`.
 - **REGEX** matches with a Java regular expression that must fully match the address — `.*\.example\.com`.
-- **IP** matches the address the hostname actually resolved to, so a rule survives a DNS change under a name you control.
+- **IP** matches an IP literal against the address you typed, so `198.51.100.7` covers that server only when you connect by its IP.
 
 A rule's **Applies To** field takes a comma-separated list, so one rule can cover a whole set of servers. In REGEX mode each entry is matched separately; a literal comma inside a regex is written `\x2c`, because a bare comma would otherwise be read as a separator.
 
 Rules are evaluated in order and the first match wins, so you can put specific rules above broad ones. A mandatory **Default (all servers)** rule always sits at the end as the fallback: it holds the client-wide baseline, is always enabled, and can neither be deleted nor reordered. A disabled rule never matches, so you can park one without losing it.
 
 The baseline itself still exists — it's the Default rule's settings. Changing a value there affects every server that no other rule claims.
+
+#### Server-sent transfers
+
+MC 1.20.5+ lets a server move you to another one without asking (`ClientboundTransferPacket`). The target is just another address, so by default it is matched like any other address and gets whichever rule covers it — or the Default rule, if none does.
+
+Each rule can instead say that a transfer keeps *its* rule for the new connection. That is the right choice when the rule carries settings you want to hold onto across the hop (a proxy, for instance) and the target server's address is not something you can write a rule for. The setting is read on the rule that is in effect when the transfer arrives, so it is that rule's own preference that decides.
 
 ---
 

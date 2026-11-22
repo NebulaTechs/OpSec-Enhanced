@@ -82,7 +82,7 @@ public class GameConnectionProxyMixin {
         if (target == null) {
             return OpsecConfig.getInstance().getGlobalSettings();
         }
-        return OpsecConfig.getInstance().settingsForTarget(target.host(), target.port(), target.ip());
+        return OpsecConfig.getInstance().settingsForTarget(target.host(), target.port());
     }
 
     //? if >=1.21.11 {
@@ -146,7 +146,7 @@ class GameConnectionProxyPipelineMixin {
 
         ServerTargets.Target target = ServerTargets.boundTo(val$connection);
         SpoofSettings settings = target != null
-                ? OpsecConfig.getInstance().settingsForTarget(target.host(), target.port(), target.ip())
+                ? OpsecConfig.getInstance().settingsForTarget(target.host(), target.port())
                 : OpsecConfig.getInstance().getGlobalSettings();
         String username = settings.getGameProxyUsername();
         String password = settings.getGameProxyPassword();

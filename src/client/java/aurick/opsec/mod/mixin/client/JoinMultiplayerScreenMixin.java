@@ -49,7 +49,7 @@ public abstract class JoinMultiplayerScreenMixin extends Screen {
         }
 
         this.opsec$settingsButton = Button.builder(
-            Component.literal(global.getAccentColor().code() + "OpSec"),
+            Component.literal(opsec$buttonLabel(global)),
             button -> {
                 if (this.minecraft != null) {
                     //? if >=26.2 {
@@ -96,6 +96,26 @@ public abstract class JoinMultiplayerScreenMixin extends Screen {
         OpsecConfig config = OpsecConfig.getInstance();
         ServerRule any = config.getAnyRule();
         return any != null ? any.getSettings() : config.getGlobalSettings();
+    }
+
+    /**
+     * The button text uses the global rule's HUD color code, so the button matches
+     * the rest of the mod's accent. Only a color code at the very start of the HUD
+     * text counts -- a section sign further into the text is part of the text, not a
+     * color. A global rule without a usable color code leaves the button at the
+     * vanilla cyan default.
+     */
+    @Unique
+    private static String opsec$buttonLabel(SpoofSettings global) {
+        String text = global.getHudText();
+        if (text.length() < 2 || text.charAt(0) != '§') {
+            return "§bOpSec";
+        }
+        char code = text.charAt(1);
+        if (!SpoofSettings.isVanillaColorCode(code)) {
+            return "§bOpSec";
+        }
+        return "§" + code + "OpSec";
     }
 
     @Unique

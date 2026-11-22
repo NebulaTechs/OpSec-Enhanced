@@ -1,7 +1,6 @@
 package aurick.opsec.mod.hud;
 
 import aurick.opsec.mod.config.OpsecConfig;
-import aurick.opsec.mod.config.SpoofSettings;
 import net.minecraft.network.chat.Component;
 //? if >=26.1 {
 /*import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -61,29 +60,32 @@ public final class OpsecHud {
     //?}
 
     public static boolean shouldRender() {
-        return OpsecConfig.getInstance().getSettings().isShowHudIndicator();
+        return !hudText().isEmpty();
     }
 
-    // Caches the built Component since this is read every frame while the (opt-in,
-    // off-by-default) HUD indicator is on -- avoids a Component.literal(...) allocation
-    // per frame when the accent color/brand haven't changed, which is the common case.
-    private static volatile SpoofSettings.AccentColor cachedAccent;
-    private static volatile String cachedBrand;
+    // Caches the built Component since this is read every frame while the HUD
+    // indicator is on -- avoids a Component.literal(...) allocation per frame when
+    // the text hasn't changed, which is the common case.
+    private static volatile String cachedText;
     private static volatile Component cachedComponent;
 
+    private static String hudText() {
+        return OpsecConfig.getInstance().getSettings().getHudText();
+    }
+
     public static Component hudComponent() {
-        SpoofSettings settings = OpsecConfig.getInstance().getSettings();
-        SpoofSettings.AccentColor accent = settings.getAccentColor();
-        String brand = settings.getEffectiveBrand();
+        // The text carries its own vanilla color code as a section-sign prefix, so
+        // the component's own style color decides how it is drawn; the draw call
+        // only supplies the alpha channel.
+        String text = hudText();
 
         Component cached = cachedComponent;
-        if (cached != null && accent == cachedAccent && brand.equals(cachedBrand)) {
+        if (cached != null && text.equals(cachedText)) {
             return cached;
         }
 
-        Component built = Component.literal(accent.code() + "OpSec: " + brand);
-        cachedAccent = accent;
-        cachedBrand = brand;
+        Component built = Component.literal(text);
+        cachedText = text;
         cachedComponent = built;
         return built;
     }

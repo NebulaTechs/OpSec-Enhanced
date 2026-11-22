@@ -49,7 +49,7 @@ public final class SettingsScreen {
 
         ConfigCategory category = builder.getOrCreateCategory(
                 OpsecLang.component(OpsecStrings.SCREEN_SETTINGS_TITLE));
-        addAppearanceEntries(builder, category, settings);
+        addInterfaceEntries(builder, category, settings);
         addStreamerEntries(builder, category, settings);
         addDiagnosticsEntries(builder, category, settings);
 
@@ -91,31 +91,16 @@ public final class SettingsScreen {
     }
 
 
-    private static void addAppearanceEntries(ConfigBuilder builder, ConfigCategory category, SpoofSettings settings) {
+    private static void addInterfaceEntries(ConfigBuilder builder, ConfigCategory category, SpoofSettings settings) {
         SubCategoryBuilder group = builder.entryBuilder()
-                .startSubCategory(OpsecLang.component(OpsecStrings.SECTION_APPEARANCE));
+                .startSubCategory(OpsecLang.component(OpsecStrings.SECTION_INTERFACE));
         group.setExpanded(true);
-
-        group.add(builder.entryBuilder()
-                .startSelector(OpsecLang.component(OpsecStrings.OPTION_ACCENT_COLOR),
-                        SpoofSettings.AccentColor.values(), settings.getAccentColor())
-                .setNameProvider(SettingsScreen::accentName)
-                .setSaveConsumer(settings::setAccentColor)
-                .build());
 
         group.add(builder.entryBuilder()
                 .startBooleanToggle(OpsecLang.component(OpsecStrings.OPTION_COMPACT_LAYOUT), settings.isCompactLayout())
                 .setTooltip(OpsecLang.component(OpsecStrings.TOOLTIP_COMPACT_LAYOUT))
                 .setSaveConsumer(settings::setCompactLayout)
                 .build());
-
-        if (OpsecConfig.MC_VERSION_HAS_HUD_INDICATOR) {
-            group.add(builder.entryBuilder()
-                    .startBooleanToggle(OpsecLang.component(OpsecStrings.OPTION_SHOW_HUD), settings.isShowHudIndicator())
-                    .setTooltip(OpsecLang.component(OpsecStrings.TOOLTIP_SHOW_HUD))
-                    .setSaveConsumer(settings::setShowHudIndicator)
-                    .build());
-        }
 
         group.add(builder.entryBuilder()
                 .startBooleanToggle(OpsecLang.component(OpsecStrings.OPTION_SHOW_MULTIPLAYER_BUTTON),
@@ -213,10 +198,6 @@ public final class SettingsScreen {
         category.addEntry(group.build());
     }
 
-
-    private static Component accentName(SpoofSettings.AccentColor color) {
-        return Component.literal(color.code() + color.name());
-    }
 
     private static Component nameMaskName(SpoofSettings.NameMaskStyle style) {
         return switch (style) {
