@@ -2,6 +2,8 @@ package aurick.opsec.mod.config;
 
 import com.google.gson.JsonObject;
 
+import aurick.opsec.mod.Opsec;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -186,7 +188,8 @@ public class ServerRule {
         // "host:port" — but not the colons inside a bare IPv6 literal, and not the
         // colon of a bracketed IPv6 literal ("[::1]:25565" splits after the bracket).
         boolean bracketed = p.indexOf(']') >= 0;
-        if (colon > 0 && (!bracketed || p.indexOf(']') < colon)) {
+        boolean bareIpv6 = !bracketed && isIpv6Literal(p);
+        if (colon > 0 && !bareIpv6 && (!bracketed || p.indexOf(']') < colon)) {
             String portPart = p.substring(colon + 1);
             try {
                 wantPort = Integer.parseInt(portPart);
@@ -245,6 +248,77 @@ public class ServerRule {
         return v;
     }
 
+    /**
+     * Tests whether a value is an IP literal rather than a hostname.
+     *
+     * <p>Used when migrating the legacy per-server profile map, whose keys were the
+     * resolved address of the server: an IP-shaped key has to become an IP rule,
+     * because an EXACT rule compares against the name the player typed and would
+     * never see the address the profile was saved under.</p>
+     */
+    public static boolean isIpLiteral(String value) {
+        String v = normalize(value);
+        if (v.isEmpty()) {
+            return false;
+        }
+        return isIpv4Literal(v) || isIpv6Literal(v);
+    }
+
+    /** True for a dotted-quad IPv4 address. */
+    private static boolean isIpv4Literal(String value) {
+        String[] parts = value.split("\\.", -1);
+        if (parts.length != 4) {
+            return false;
+        }
+        for (String part : parts) {
+            if (part.isEmpty() || part.length() > 3) {
+                return false;
+            }
+            int octet = 0;
+            for (int i = 0; i < part.length(); i++) {
+                char c = part.charAt(i);
+                if (c < '0' || c > '9') {
+                    return false;
+                }
+                octet = octet * 10 + (c - '0');
+            }
+            if (octet > 255) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * True for a bare IPv6 literal such as {@code 2001:db8::1}.
+     *
+     * <p>A {@code host:port} pattern carries exactly one colon, so a second colon is
+     * what separates the two forms. The remaining characters are restricted to the
+     * ones an IPv6 literal may contain, which keeps a malformed pattern such as
+     * {@code example.com:25565:99} from being mistaken for an address.</p>
+     */
+    static boolean isIpv6Literal(String value) {
+        if (value == null) {
+            return false;
+        }
+        String v = value.trim();
+        int first = v.indexOf(':');
+        if (first < 0 || v.indexOf(':', first + 1) < 0) {
+            return false;
+        }
+        for (int i = 0; i < v.length(); i++) {
+            char c = v.charAt(i);
+            boolean allowed = (c >= '0' && c <= '9')
+                    || (c >= 'a' && c <= 'f')
+                    || (c >= 'A' && c <= 'F')
+                    || c == ':' || c == '.' || c == '%';
+            if (!allowed) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
         json.addProperty("matchType", matchType.name());
@@ -257,17 +331,23 @@ public class ServerRule {
     public static ServerRule fromJson(JsonObject json) {
         ServerRule rule = new ServerRule();
         if (json.has("matchType")) {
+            String raw = JsonSafe.str(json, "matchType", "");
             try {
-                rule.matchType = MatchType.valueOf(json.get("matchType").getAsString().trim().toUpperCase(Locale.ROOT));
+                rule.matchType = MatchType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException e) {
+                // A rule whose match type changes silently stops matching what the user wrote.
+                Opsec.LOGGER.warn(
+                    "[OpSec] Unknown server rule match type '{}' - treating the rule as EXACT",
+                    raw
+                );
                 rule.matchType = MatchType.EXACT;
             }
         }
         if (json.has("pattern")) {
-            rule.pattern = json.get("pattern").getAsString();
+            rule.pattern = JsonSafe.str(json, "pattern", "");
         }
         if (json.has("enabled")) {
-            rule.enabled = json.get("enabled").getAsBoolean();
+            rule.enabled = JsonSafe.bool(json, "enabled", true);
         }
         if (rule.matchType == MatchType.ANY) {
             // The ANY rule is structurally always-on and pattern-less: a hand-edited
@@ -275,8 +355,9 @@ public class ServerRule {
             rule.pattern = "";
             rule.enabled = true;
         }
-        if (json.has("settings")) {
-            rule.settings.copyFrom(SpoofSettings.fromJson(json.getAsJsonObject("settings")));
+        JsonObject settingsJson = JsonSafe.obj(json, "settings");
+        if (settingsJson != null) {
+            rule.settings.copyFrom(SpoofSettings.fromJson(settingsJson));
         }
         return rule;
     }

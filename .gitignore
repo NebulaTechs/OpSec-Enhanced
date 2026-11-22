@@ -2,7 +2,6 @@
 .gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
-
 # IDE
 .idea/
 *.iml
@@ -15,16 +14,13 @@ build/
 .classpath
 .project
 bin/
-
 # Fabric Loom
 run/
 remappedSrc/
 .factorypath
-
 # Stonecutter
 versions/*/build/
 versions/*/.gradle/
-
 # NeoForge subprojects
 neoforge/build/
 neoforge/.gradle/
@@ -34,27 +30,22 @@ neoforge-*/build/
 neoforge-*/.gradle/
 neoforge-*/run/
 neoforge-*/runs/
-
 # Legacy directories (no longer used)
 legacy/
 modern/
-
 # OS
 .DS_Store
 Thumbs.db
-
 # Logs
 *.log
 logs/
-
 # Python cache
 __pycache__/
 *.py[cod]
-
 # Skidding
 CLAUDE.md
 .planning/
 AGENTS.md
-
 # Agent tooling
 .omo/
+tools/config-migration-test/build/

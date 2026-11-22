@@ -580,43 +580,39 @@ public class SpoofSettings {
     public static SpoofSettings fromJson(JsonObject json) {
         SpoofSettings s = new SpoofSettings();
         if (json.has("spoofAsVanilla")) {
-            s.spoofAsVanilla = json.get("spoofAsVanilla").getAsBoolean();
+            s.spoofAsVanilla = JsonSafe.bool(json, "spoofAsVanilla", false);
         } else if (json.has("spoofBrand")) {
             // Legacy migration: old spoofBrand + customBrand collapse into a single toggle.
             // spoofAsVanilla=true iff the old config was actively spoofing AND spoofing to vanilla.
-            boolean sb = json.get("spoofBrand").getAsBoolean();
-            String cb = json.has("customBrand") ? json.get("customBrand").getAsString() : FABRIC;
+            boolean sb = JsonSafe.bool(json, "spoofBrand", false);
+            String cb = JsonSafe.str(json, "customBrand", FABRIC);
             s.spoofAsVanilla = sb && VANILLA.equalsIgnoreCase(cb);
         }
         if (json.has("brandOverride")) {
             try {
-                s.brandOverride = BrandOverride.valueOf(json.get("brandOverride").getAsString());
+                s.brandOverride = BrandOverride.valueOf(JsonSafe.str(json, "brandOverride", BrandOverride.DEFAULT.name()));
             } catch (IllegalArgumentException e) {
                 s.brandOverride = BrandOverride.DEFAULT;
             }
         }
         if (json.has("lunarVersionSuffix")) {
-            String suffix = json.get("lunarVersionSuffix").getAsString();
+            String suffix = JsonSafe.str(json, "lunarVersionSuffix", OpsecConstants.Brands.LUNAR_CLIENT_DEFAULT_SUFFIX);
             s.lunarVersionSuffix = (suffix == null || suffix.isBlank())
                     ? OpsecConstants.Brands.LUNAR_CLIENT_DEFAULT_SUFFIX
                     : suffix.trim();
         }
         if (json.has("lunarBrandHistory")) {
-            JsonArray lunarHistoryArray = json.getAsJsonArray("lunarBrandHistory");
-            s.lunarBrandHistory = new ArrayList<>();
-            for (int i = 0; i < lunarHistoryArray.size(); i++) {
-                s.lunarBrandHistory.add(lunarHistoryArray.get(i).getAsString());
-            }
+            s.lunarBrandHistory = new ArrayList<>(JsonSafe.stringList(json, "lunarBrandHistory"));
         } else if (json.has("lunarVersionSuffix")) {
             // Legacy config predates history tracking — seed it from the loaded value.
             s.pushLunarBrandHistory(s.lunarVersionSuffix);
         }
-        if (json.has("dpiFragmentTlsHello")) s.dpiFragmentTlsHello = json.get("dpiFragmentTlsHello").getAsBoolean();
-        if (json.has("hudText")) s.hudText = json.get("hudText").getAsString();
+        if (json.has("dpiFragmentTlsHello")) s.dpiFragmentTlsHello = JsonSafe.bool(json, "dpiFragmentTlsHello", false);
+        if (json.has("hudText")) s.hudText = JsonSafe.str(json, "hudText", "");
         // The old build stored the HUD as a global on/off switch with a fixed text.
         // Fold it into the per-rule text field.
         if (s.hudText.isEmpty() && json.has("showHudIndicator")
-                && json.get("showHudIndicator").getAsBoolean()) {
+                && JsonSafe.bool(json, "showHudIndicator", false)) {
             s.hudText = "§" + DEFAULT_ACCENT + "OpSec: " + s.getEffectiveBrand();
         }
         // The color used to be a separate field; fold it into the text as a
@@ -626,28 +622,28 @@ public class SpoofSettings {
         // text has nothing to color, so its accent is dropped rather than left
         // behind as a lone color code that would look like an enabled HUD.
         if (json.has("accentColor")) {
-            String raw = json.get("accentColor").getAsString().trim();
+            String raw = JsonSafe.str(json, "accentColor", "").trim();
             if (!raw.isEmpty() && !s.hudText.isEmpty()) {
                 String migrated = migrateAccent(raw);
                 String code = migrated != null ? migrated : normalizeAccent(raw);
                 s.hudText = "§" + code + stripColorPrefix(s.hudText);
             }
         }
-        if (json.has("compactLayout")) s.compactLayout = json.get("compactLayout").getAsBoolean();
-        if (json.has("showMultiplayerScreenButton")) s.showMultiplayerScreenButton = json.get("showMultiplayerScreenButton").getAsBoolean();
-        if (json.has("isolatePackCache")) s.isolatePackCache = json.get("isolatePackCache").getAsBoolean();
-        if (json.has("blockLocalPackUrls")) s.blockLocalPackUrls = json.get("blockLocalPackUrls").getAsBoolean();
-        if (json.has("stripModShaders")) s.stripModShaders = json.get("stripModShaders").getAsBoolean();
+        if (json.has("compactLayout")) s.compactLayout = JsonSafe.bool(json, "compactLayout", false);
+        if (json.has("showMultiplayerScreenButton")) s.showMultiplayerScreenButton = JsonSafe.bool(json, "showMultiplayerScreenButton", true);
+        if (json.has("isolatePackCache")) s.isolatePackCache = JsonSafe.bool(json, "isolatePackCache", true);
+        if (json.has("blockLocalPackUrls")) s.blockLocalPackUrls = JsonSafe.bool(json, "blockLocalPackUrls", true);
+        if (json.has("stripModShaders")) s.stripModShaders = JsonSafe.bool(json, "stripModShaders", true);
         // Legacy support
-        if (json.has("spoofLocalPackUrls")) s.blockLocalPackUrls = json.get("spoofLocalPackUrls").getAsBoolean();
-        if (json.has("translationProtection")) s.translationProtection = json.get("translationProtection").getAsBoolean();
+        if (json.has("spoofLocalPackUrls")) s.blockLocalPackUrls = JsonSafe.bool(json, "spoofLocalPackUrls", true);
+        if (json.has("translationProtection")) s.translationProtection = JsonSafe.bool(json, "translationProtection", true);
         // Legacy support
-        if (json.has("blockTranslationExploit")) s.translationProtection = json.get("blockTranslationExploit").getAsBoolean();
-        if (json.has("fakeDefaultKeybinds")) s.fakeDefaultKeybinds = json.get("fakeDefaultKeybinds").getAsBoolean();
-        if (json.has("meteorFix")) s.meteorFix = json.get("meteorFix").getAsBoolean();
+        if (json.has("blockTranslationExploit")) s.translationProtection = JsonSafe.bool(json, "blockTranslationExploit", true);
+        if (json.has("fakeDefaultKeybinds")) s.fakeDefaultKeybinds = JsonSafe.bool(json, "fakeDefaultKeybinds", true);
+        if (json.has("meteorFix")) s.meteorFix = JsonSafe.bool(json, "meteorFix", true);
         // Bypass Server Pack Requirement (tri-state, with backward-compat migrations)
         if (json.has("packStripMode")) {
-            String raw = json.get("packStripMode").getAsString();
+            String raw = JsonSafe.str(json, "packStripMode", "");
             // Legacy OFF/ON enum values from the unreleased staged version.
             s.packStripMode = switch (raw) {
                 case "OFF" -> StripMode.MANUAL;
@@ -661,19 +657,19 @@ public class SpoofSettings {
                 }
             };
         } else if (json.has("fakeAcceptResourcePack")) {
-            boolean legacyEnabled = json.get("fakeAcceptResourcePack").getAsBoolean();
+            boolean legacyEnabled = JsonSafe.bool(json, "fakeAcceptResourcePack", false);
             boolean legacyOverlay = !json.has("showPackAcceptOverlay")
-                    || json.get("showPackAcceptOverlay").getAsBoolean();
+                    || JsonSafe.bool(json, "showPackAcceptOverlay", true);
             s.packStripMode = !legacyEnabled ? StripMode.MANUAL
                     : (legacyOverlay ? StripMode.ASK : StripMode.ALWAYS_ON);
         }
-        if (json.has("showAlerts")) s.showAlerts = json.get("showAlerts").getAsBoolean();
-        if (json.has("showToasts")) s.showToasts = json.get("showToasts").getAsBoolean();
-        if (json.has("logDetections")) s.logDetections = json.get("logDetections").getAsBoolean();
-        if (json.has("debugAlerts")) s.debugAlerts = json.get("debugAlerts").getAsBoolean();
-        if (json.has("debugCommand")) s.debugCommand = json.get("debugCommand").getAsBoolean();
+        if (json.has("showAlerts")) s.showAlerts = JsonSafe.bool(json, "showAlerts", true);
+        if (json.has("showToasts")) s.showToasts = JsonSafe.bool(json, "showToasts", true);
+        if (json.has("logDetections")) s.logDetections = JsonSafe.bool(json, "logDetections", true);
+        if (json.has("debugAlerts")) s.debugAlerts = JsonSafe.bool(json, "debugAlerts", false);
+        if (json.has("debugCommand")) s.debugCommand = JsonSafe.bool(json, "debugCommand", false);
         if (json.has("signingMode")) {
-            String mode = json.get("signingMode").getAsString();
+            String mode = JsonSafe.str(json, "signingMode", "");
             // Legacy migrations:
             //   NO_KEY / NO_SIGN  → OFF  (old enum values)
             //   ON_DEMAND         → SIGN (removed: see SigningMode javadoc)
@@ -684,52 +680,52 @@ public class SpoofSettings {
                 s.signingMode = SigningMode.SIGN;
             }
         }
-        if (json.has("disableTelemetry")) s.disableTelemetry = json.get("disableTelemetry").getAsBoolean();
-        if (json.has("guardChatLinks")) s.guardChatLinks = json.get("guardChatLinks").getAsBoolean();
-        if (json.has("blockCookies")) s.blockCookies = json.get("blockCookies").getAsBoolean();
-        if (json.has("normalizeClientInfo")) s.normalizeClientInfo = json.get("normalizeClientInfo").getAsBoolean();
-        if (json.has("logScrubberEnabled")) s.logScrubberEnabled = json.get("logScrubberEnabled").getAsBoolean();
-        if (json.has("lazyServerPing")) s.lazyServerPing = json.get("lazyServerPing").getAsBoolean();
-        if (json.has("cloudflarePingRelayEnabled")) s.cloudflarePingRelayEnabled = json.get("cloudflarePingRelayEnabled").getAsBoolean();
-        if (json.has("cloudflarePingRelayUrl")) s.cloudflarePingRelayUrl = json.get("cloudflarePingRelayUrl").getAsString();
-        if (json.has("scrubPackHeaders")) s.scrubPackHeaders = json.get("scrubPackHeaders").getAsBoolean();
-        if (json.has("commandHistoryGuard")) s.commandHistoryGuard = json.get("commandHistoryGuard").getAsBoolean();
-        if (json.has("autoPurgePackCache")) s.autoPurgePackCache = json.get("autoPurgePackCache").getAsBoolean();
-        if (json.has("autoRandomizeNewAccount")) s.autoRandomizeNewAccount = json.get("autoRandomizeNewAccount").getAsBoolean();
-        if (json.has("confirmTransfer")) s.confirmTransfer = json.get("confirmTransfer").getAsBoolean();
-        if (json.has("reselectRuleOnTransfer")) s.reselectRuleOnTransfer = json.get("reselectRuleOnTransfer").getAsBoolean();
-        if (json.has("integrityCheckEnabled")) s.integrityCheckEnabled = json.get("integrityCheckEnabled").getAsBoolean();
+        if (json.has("disableTelemetry")) s.disableTelemetry = JsonSafe.bool(json, "disableTelemetry", true);
+        if (json.has("guardChatLinks")) s.guardChatLinks = JsonSafe.bool(json, "guardChatLinks", true);
+        if (json.has("blockCookies")) s.blockCookies = JsonSafe.bool(json, "blockCookies", true);
+        if (json.has("normalizeClientInfo")) s.normalizeClientInfo = JsonSafe.bool(json, "normalizeClientInfo", true);
+        if (json.has("logScrubberEnabled")) s.logScrubberEnabled = JsonSafe.bool(json, "logScrubberEnabled", true);
+        if (json.has("lazyServerPing")) s.lazyServerPing = JsonSafe.bool(json, "lazyServerPing", false);
+        if (json.has("cloudflarePingRelayEnabled")) s.cloudflarePingRelayEnabled = JsonSafe.bool(json, "cloudflarePingRelayEnabled", false);
+        if (json.has("cloudflarePingRelayUrl")) s.cloudflarePingRelayUrl = JsonSafe.str(json, "cloudflarePingRelayUrl", "");
+        if (json.has("scrubPackHeaders")) s.scrubPackHeaders = JsonSafe.bool(json, "scrubPackHeaders", true);
+        if (json.has("commandHistoryGuard")) s.commandHistoryGuard = JsonSafe.bool(json, "commandHistoryGuard", true);
+        if (json.has("autoPurgePackCache")) s.autoPurgePackCache = JsonSafe.bool(json, "autoPurgePackCache", false);
+        if (json.has("autoRandomizeNewAccount")) s.autoRandomizeNewAccount = JsonSafe.bool(json, "autoRandomizeNewAccount", false);
+        if (json.has("confirmTransfer")) s.confirmTransfer = JsonSafe.bool(json, "confirmTransfer", true);
+        if (json.has("reselectRuleOnTransfer")) s.reselectRuleOnTransfer = JsonSafe.bool(json, "reselectRuleOnTransfer", true);
+        if (json.has("integrityCheckEnabled")) s.integrityCheckEnabled = JsonSafe.bool(json, "integrityCheckEnabled", true);
         if (json.has("gameProxyType")) {
             try {
-                s.gameProxyType = GameProxyType.valueOf(json.get("gameProxyType").getAsString());
+                s.gameProxyType = GameProxyType.valueOf(JsonSafe.str(json, "gameProxyType", GameProxyType.NONE.name()));
             } catch (IllegalArgumentException e) {
                 s.gameProxyType = GameProxyType.NONE;
             }
         }
-        if (json.has("gameProxyHost")) s.gameProxyHost = json.get("gameProxyHost").getAsString();
-        if (json.has("gameProxyPort")) s.gameProxyPort = json.get("gameProxyPort").getAsInt();
-        if (json.has("gameProxyUsername")) s.gameProxyUsername = json.get("gameProxyUsername").getAsString();
-        if (json.has("gameProxyPassword")) s.gameProxyPassword = AccountCrypto.decrypt(json.get("gameProxyPassword").getAsString());
-        if (json.has("streamerModeEnabled")) s.streamerModeEnabled = json.get("streamerModeEnabled").getAsBoolean();
-        if (json.has("streamerHideCoordinates")) s.streamerHideCoordinates = json.get("streamerHideCoordinates").getAsBoolean();
-        if (json.has("streamerMaskPlayerNames")) s.streamerMaskPlayerNames = json.get("streamerMaskPlayerNames").getAsBoolean();
+        if (json.has("gameProxyHost")) s.gameProxyHost = JsonSafe.str(json, "gameProxyHost", "");
+        if (json.has("gameProxyPort")) s.gameProxyPort = JsonSafe.i32(json, "gameProxyPort", 1080);
+        if (json.has("gameProxyUsername")) s.gameProxyUsername = JsonSafe.str(json, "gameProxyUsername", "");
+        if (json.has("gameProxyPassword")) s.gameProxyPassword = AccountCrypto.decrypt(JsonSafe.str(json, "gameProxyPassword", ""));
+        if (json.has("streamerModeEnabled")) s.streamerModeEnabled = JsonSafe.bool(json, "streamerModeEnabled", false);
+        if (json.has("streamerHideCoordinates")) s.streamerHideCoordinates = JsonSafe.bool(json, "streamerHideCoordinates", true);
+        if (json.has("streamerMaskPlayerNames")) s.streamerMaskPlayerNames = JsonSafe.bool(json, "streamerMaskPlayerNames", true);
         if (json.has("streamerNameMaskStyle")) {
             try {
-                s.streamerNameMaskStyle = NameMaskStyle.valueOf(json.get("streamerNameMaskStyle").getAsString());
+                s.streamerNameMaskStyle = NameMaskStyle.valueOf(JsonSafe.str(json, "streamerNameMaskStyle", NameMaskStyle.GLYPHS.name()));
             } catch (IllegalArgumentException e) {
                 s.streamerNameMaskStyle = NameMaskStyle.GLYPHS;
             }
         }
-        if (json.has("streamerHideServerAddress")) s.streamerHideServerAddress = json.get("streamerHideServerAddress").getAsBoolean();
-        if (json.has("buttonX")) s.buttonX = json.get("buttonX").getAsInt();
-        if (json.has("buttonY")) s.buttonY = json.get("buttonY").getAsInt();
-        if (json.has("skippedUpdateVersion")) s.skippedUpdateVersion = json.get("skippedUpdateVersion").getAsString();
-        if (json.has("tamperWarningDismissed")) s.tamperWarningDismissed = json.get("tamperWarningDismissed").getAsBoolean();
-        if (json.has("alertHintShown")) s.alertHintShown = json.get("alertHintShown").getAsBoolean();
+        if (json.has("streamerHideServerAddress")) s.streamerHideServerAddress = JsonSafe.bool(json, "streamerHideServerAddress", true);
+        if (json.has("buttonX")) s.buttonX = JsonSafe.i32(json, "buttonX", -1);
+        if (json.has("buttonY")) s.buttonY = JsonSafe.i32(json, "buttonY", -1);
+        if (json.has("skippedUpdateVersion")) s.skippedUpdateVersion = JsonSafe.str(json, "skippedUpdateVersion", "");
+        if (json.has("tamperWarningDismissed")) s.tamperWarningDismissed = JsonSafe.bool(json, "tamperWarningDismissed", false);
+        if (json.has("alertHintShown")) s.alertHintShown = JsonSafe.bool(json, "alertHintShown", false);
 
         // Whitelist settings (new tri-state, with backward compat for old boolean)
         if (json.has("whitelistMode")) {
-            String modeStr = json.get("whitelistMode").getAsString();
+            String modeStr = JsonSafe.str(json, "whitelistMode", "");
             if ("ON".equals(modeStr)) modeStr = "CUSTOM";
             try {
                 s.whitelistMode = WhitelistMode.valueOf(modeStr);
@@ -737,10 +733,10 @@ public class SpoofSettings {
                 s.whitelistMode = WhitelistMode.OFF;
             }
         } else if (json.has("whitelistEnabled")) {
-            s.whitelistMode = json.get("whitelistEnabled").getAsBoolean() ? WhitelistMode.CUSTOM : WhitelistMode.OFF;
+            s.whitelistMode = JsonSafe.bool(json, "whitelistEnabled", false) ? WhitelistMode.CUSTOM : WhitelistMode.OFF;
         }
         if (json.has("previousWhitelistMode")) {
-            String prevStr = json.get("previousWhitelistMode").getAsString();
+            String prevStr = JsonSafe.str(json, "previousWhitelistMode", "");
             try {
                 WhitelistMode prev = WhitelistMode.valueOf(prevStr);
                 // OFF is never a meaningful "previous" (it's the override state) — drop it.
@@ -752,11 +748,7 @@ public class SpoofSettings {
             }
         }
         if (json.has("whitelistedMods")) {
-            JsonArray modsArray = json.getAsJsonArray("whitelistedMods");
-            s.whitelistedMods = new HashSet<>();
-            for (int i = 0; i < modsArray.size(); i++) {
-                s.whitelistedMods.add(modsArray.get(i).getAsString());
-            }
+            s.whitelistedMods = new HashSet<>(JsonSafe.stringList(json, "whitelistedMods"));
         }
 
         return s;

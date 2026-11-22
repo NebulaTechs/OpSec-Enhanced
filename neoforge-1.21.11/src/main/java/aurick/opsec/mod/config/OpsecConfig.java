@@ -185,6 +185,7 @@ public class OpsecConfig {
     }
 
     public void load() {
+        readOnly = false;
         if (!Files.exists(CONFIG_PATH)) {
             Opsec.LOGGER.info("[OpSec] Creating default config");
             // The file must be written with the invariant already satisfied: exactly one
@@ -208,7 +209,25 @@ public class OpsecConfig {
 
             JsonObject json = JsonParser.parseString(content).getAsJsonObject();
 
-            int version = json.has("version") ? json.get("version").getAsInt() : 1;
+            // The version decides how the rest of the file is read, so a version that
+            // is not a plain number means the file is not one this build can interpret
+            // — refusing it is safer than guessing a version and migrating wrongly.
+            int version;
+            if (json.has("version")) {
+                com.google.gson.JsonElement versionElement = json.get("version");
+                if (!versionElement.isJsonPrimitive()
+                        || !versionElement.getAsJsonPrimitive().isNumber()) {
+                    readOnly = true;
+                    Opsec.LOGGER.error(
+                        "[OpSec] Config file has a non-numeric version - refusing to load it and leaving the file untouched"
+                    );
+                    resetToDefaults();
+                    return;
+                }
+                version = versionElement.getAsInt();
+            } else {
+                version = 1;
+            }
             if (version > CONFIG_VERSION) {
                 readOnly = true;
                 Opsec.LOGGER.error(
@@ -222,19 +241,22 @@ public class OpsecConfig {
             // v1 kept the global baseline in a top-level key; v2 keeps it in the ANY rule
             // and mirrors it back into "settings" so downgrades keep working.
             SpoofSettings legacyGlobal = null;
-            if (json.has("settings")) {
-                legacyGlobal = SpoofSettings.fromJson(
-                    json.getAsJsonObject("settings")
-                );
-            } else if (json.has("defaultSettings")) {
-                legacyGlobal = SpoofSettings.fromJson(
-                    json.getAsJsonObject("defaultSettings")
-                );
+            JsonObject legacySettings = JsonSafe.obj(json, "settings");
+            if (legacySettings == null) {
+                legacySettings = JsonSafe.obj(json, "defaultSettings");
+            }
+            if (legacySettings != null) {
+                legacyGlobal = SpoofSettings.fromJson(legacySettings);
             }
 
             serverRules.clear();
-            if (json.has("serverRules")) {
-                for (JsonElement element : json.getAsJsonArray("serverRules")) {
+            JsonArray rulesArray = JsonSafe.arr(json, "serverRules");
+            if (rulesArray != null) {
+                for (JsonElement element : rulesArray) {
+                    if (!element.isJsonObject()) {
+                        Opsec.LOGGER.warn("[OpSec] Dropping malformed server rule: not an object");
+                        continue;
+                    }
                     try {
                         ServerRule rule = ServerRule.fromJson(element.getAsJsonObject());
                         validateAndCorrectSettings(rule.getSettings());
@@ -243,32 +265,42 @@ public class OpsecConfig {
                         Opsec.LOGGER.warn("[OpSec] Dropping malformed server rule: {}", e.getMessage());
                     }
                 }
-            } else if (json.has("serverProfiles")) {
-                // Legacy layout: a map of address -> settings. Every entry becomes an EXACT
-                // rule for that address, sorted by address so the migrated order is stable.
-                JsonObject profiles = json.getAsJsonObject("serverProfiles");
-                List<String> addresses = new ArrayList<>(profiles.keySet());
-                Collections.sort(addresses);
-                for (String address : addresses) {
-                    try {
-                        SpoofSettings profile = SpoofSettings.fromJson(profiles.getAsJsonObject(address));
-                        validateAndCorrectSettings(profile);
-                        ServerRule rule = new ServerRule(ServerRule.MatchType.EXACT, address);
-                        rule.copySettingsFrom(profile);
-                        serverRules.add(rule);
-                    } catch (Exception e) {
-                        Opsec.LOGGER.warn("[OpSec] Dropping malformed server profile for '{}': {}", address, e.getMessage());
+            } else {
+                // Legacy layout: a map of address -> settings. Every entry becomes a rule
+                // for that address, sorted by address so the migrated order is stable.
+                JsonObject profiles = JsonSafe.obj(json, "serverProfiles");
+                if (profiles != null) {
+                    List<String> addresses = new ArrayList<>(profiles.keySet());
+                    Collections.sort(addresses);
+                    for (String address : addresses) {
+                        JsonObject profileJson = JsonSafe.obj(profiles, address);
+                        if (profileJson == null) {
+                            Opsec.LOGGER.warn("[OpSec] Dropping malformed server profile for '{}': not an object", address);
+                            continue;
+                        }
+                        try {
+                            SpoofSettings profile = SpoofSettings.fromJson(profileJson);
+                            validateAndCorrectSettings(profile);
+                            // The legacy map was keyed by the server's resolved address,
+                            // so an IP-shaped key has to become an IP rule — an EXACT rule
+                            // compares against the name the player typed and would never
+                            // see the address the profile was saved under.
+                            ServerRule.MatchType type = ServerRule.isIpLiteral(address)
+                                    ? ServerRule.MatchType.IP
+                                    : ServerRule.MatchType.EXACT;
+                            ServerRule rule = new ServerRule(type, address);
+                            rule.copySettingsFrom(profile);
+                            serverRules.add(rule);
+                        } catch (Exception e) {
+                            Opsec.LOGGER.warn("[OpSec] Dropping malformed server profile for '{}': {}", address, e.getMessage());
+                        }
                     }
+                    Opsec.LOGGER.info("[OpSec] Migrated {} legacy server profile(s) into server rules", serverRules.size());
                 }
-                Opsec.LOGGER.info("[OpSec] Migrated {} legacy server profile(s) into server rules", serverRules.size());
             }
 
             packCacheTrustedServers.clear();
-            if (json.has("packCacheTrustedServers")) {
-                for (com.google.gson.JsonElement e : json.getAsJsonArray("packCacheTrustedServers")) {
-                    packCacheTrustedServers.add(e.getAsString());
-                }
-            }
+            packCacheTrustedServers.addAll(JsonSafe.stringList(json, "packCacheTrustedServers"));
 
             boolean createdAny = ensureAnyRule();
             ServerRule anyRule = getAnyRule();
@@ -321,8 +353,39 @@ public class OpsecConfig {
                 "[OpSec] Invalid JSON in config file: {}",
                 e.getMessage()
             );
+            backupUnreadableFile();
             resetToDefaults();
             save();
+        } catch (RuntimeException e) {
+            // Fall back to the defaults but leave the file alone — a file the build
+            // could not read may still be repairable by hand.
+            Opsec.LOGGER.error(
+                "[OpSec] Could not read config file, falling back to defaults: {}",
+                e.toString()
+            );
+            backupUnreadableFile();
+            resetToDefaults();
+        }
+    }
+
+    /**
+     * Copies a config file the build could not read to a sibling file, so the
+     * settings it still holds are not lost when the loader falls back to the
+     * defaults and writes them over the original.
+     */
+    private void backupUnreadableFile() {
+        try {
+            Path backup = CONFIG_PATH.resolveSibling(CONFIG_PATH.getFileName() + ".corrupt");
+            Files.copy(CONFIG_PATH, backup, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            Opsec.LOGGER.warn(
+                "[OpSec] Kept a copy of the unreadable config file at {}",
+                backup
+            );
+        } catch (IOException e) {
+            Opsec.LOGGER.warn(
+                "[OpSec] Could not keep a copy of the unreadable config file: {}",
+                e.getMessage()
+            );
         }
     }
 
