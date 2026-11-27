@@ -268,6 +268,17 @@ MC 1.20.5+ lets a server move you to another one without asking (`ClientboundTra
 
 Each rule can instead say that a transfer keeps *its* rule for the new connection. That is the right choice when the rule carries settings you want to hold onto across the hop (a proxy, for instance) and the target server's address is not something you can write a rule for. The setting is read on the rule that is in effect when the transfer arrives, so it is that rule's own preference that decides.
 
+#### Upgrading from the old per-server profiles
+
+Before rules existed, per-server settings were saved in a map keyed by the server's **resolved** IP address. Rules match the address you *type*, so a profile saved under `198.51.100.7` no longer applies when you connect to `play.example.com` — it would only ever apply if you connected by that IP.
+
+Rather than dropping those profiles silently, OpSec asks what to do with them the first time it opens a config that still has them:
+
+- **Backup Original File** keeps a copy of the old config as `opsec.json.v1.bak` and leaves those profiles out of the new config.
+- **Upgrade to IP Rules** turns them into IP rules, which apply only when you connect by typing the IP literal.
+
+Nothing is written while the question is on screen, so the old config stays intact until you pick one. Profiles saved under a hostname carry over as EXACT rules without asking.
+
 ---
 
 ### Client Spoofer
