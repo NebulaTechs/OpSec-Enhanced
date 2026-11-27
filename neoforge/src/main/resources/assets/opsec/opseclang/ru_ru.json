@@ -315,5 +315,14 @@
   "opsec.option.autoRandomizeNewAccount.tooltip": "Сразу рандомизирует скин и плащ только что добавленного аккаунта сессии, чтобы новый альт не начинался с общим скином/плащом с уже сохранённым аккаунтом. По умолчанию выключено.",
   "opsec.button.settings.tooltip": "Открыть настройки OpSec",
   "opsec.option.showMultiplayerButton": "Показывать кнопку на экране мультиплеера",
-  "opsec.option.showMultiplayerButton.tooltip": "Показывает кнопку OpSec в списке серверов. Без Mod Menu эта кнопка — единственный способ открыть настройки."
+  "opsec.option.showMultiplayerButton.tooltip": "Показывает кнопку OpSec в списке серверов. Без Mod Menu эта кнопка — единственный способ открыть настройки.",
+  "opsec.legacyMigration.title": "Старые профили серверов",
+  "opsec.legacyMigration.warning": "§eЭти профили были сохранены по IP-адресу сервера, а не по имени, которое вы вводили.",
+  "opsec.legacyMigration.affected": "§7Затронутые профили:",
+  "opsec.legacyMigration.entry": "§7- §f%s",
+  "opsec.legacyMigration.more": "§8... и ещё %s",
+  "opsec.legacyMigration.backupExplain": "§7Резервная копия: §fсохранить копию исходного файла и не переносить эти профили.",
+  "opsec.legacyMigration.upgradeExplain": "§7Обновить: §fпревратить их в правила по IP — они сработают только при вводе IP напрямую.",
+  "opsec.legacyMigration.backup": "Копия исходного файла",
+  "opsec.legacyMigration.upgrade": "Превратить в правила по IP"
 }

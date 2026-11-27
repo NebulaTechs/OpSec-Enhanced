@@ -315,5 +315,14 @@
   "opsec.whitelist.notInstalled": "Hindi naka-install (burahin para alisin)",
   "opsec.button.settings.tooltip": "Buksan ang mga setting ng OpSec",
   "opsec.option.showMultiplayerButton": "Ipakita ang button sa multiplayer screen",
-  "opsec.option.showMultiplayerButton.tooltip": "Ipakita ang button ng OpSec sa listahan ng server. Kung walang Mod Menu, ito lang ang paraan sa mga setting."
+  "opsec.option.showMultiplayerButton.tooltip": "Ipakita ang button ng OpSec sa listahan ng server. Kung walang Mod Menu, ito lang ang paraan sa mga setting.",
+  "opsec.legacyMigration.title": "Mga dating profile ng server",
+  "opsec.legacyMigration.warning": "§eAng mga profile na ito ay na-save sa ilalim ng IP address ng server, hindi ng pangalan na inilagay mo.",
+  "opsec.legacyMigration.affected": "§7Mga apektadong profile:",
+  "opsec.legacyMigration.entry": "§7- §f%s",
+  "opsec.legacyMigration.more": "§8... at %s pang iba",
+  "opsec.legacyMigration.backupExplain": "§7Backup: §fpanatilihin ang kopya ng orihinal na file at huwag isama ang mga profile na ito.",
+  "opsec.legacyMigration.upgradeExplain": "§7Upgrade: §fgawing IP rules ang mga ito - gumagana lang kapag inilagay mo ang IP.",
+  "opsec.legacyMigration.backup": "I-back up ang orihinal",
+  "opsec.legacyMigration.upgrade": "Gawing IP rules"
 }

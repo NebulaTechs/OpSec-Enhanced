@@ -1,6 +1,8 @@
 package aurick.opsec.mod.mixin.client;
 
 import aurick.opsec.mod.config.JarIntegrityChecker;
+import aurick.opsec.mod.config.LegacyProfileWarningScreen;
+import aurick.opsec.mod.config.OpsecConfig;
 import aurick.opsec.mod.config.TamperWarningScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -20,22 +22,35 @@ public abstract class TitleScreenMixin extends Screen {
 
     @Unique private boolean opsec$integrityHandled = false;
 
+    @Unique private boolean opsec$legacyMigrationHandled = false;
+
     protected TitleScreenMixin(Component title) {
         super(title);
     }
 
     @Inject(method = "tick", at = @At("TAIL"))
     private void opsec$pollIntegrityCheck(CallbackInfo ci) {
-        if (opsec$integrityHandled || !JarIntegrityChecker.isCheckComplete()) {
+        if (!opsec$integrityHandled && JarIntegrityChecker.isCheckComplete()) {
+            opsec$integrityHandled = true;
+            if (this.minecraft != null && JarIntegrityChecker.isTamperDetected()) {
+                JarIntegrityChecker.markShown();
+                //? if >=26.2 {
+                /*this.minecraft.setScreenAndShow(new TamperWarningScreen(this));*/
+                //?} else {
+                this.minecraft.setScreen(new TamperWarningScreen(this));
+                //?}
+                return;
+            }
+        }
+        if (opsec$legacyMigrationHandled || this.minecraft == null) {
             return;
         }
-        opsec$integrityHandled = true;
-        if (this.minecraft != null && JarIntegrityChecker.isTamperDetected()) {
-            JarIntegrityChecker.markShown();
+        opsec$legacyMigrationHandled = true;
+        if (OpsecConfig.getInstance().hasPendingLegacyMigration()) {
             //? if >=26.2 {
-            /*this.minecraft.setScreenAndShow(new TamperWarningScreen(this));*/
+            /*this.minecraft.setScreenAndShow(new LegacyProfileWarningScreen(this));*/
             //?} else {
-            this.minecraft.setScreen(new TamperWarningScreen(this));
+            this.minecraft.setScreen(new LegacyProfileWarningScreen(this));
             //?}
         }
     }

@@ -131,6 +131,17 @@ public class OpsecConfig {
     /** True when the config file is newer than this build understands; it is then never written. */
     private boolean readOnly = false;
 
+    /**
+     * Legacy v1 profiles whose key was a resolved IP address. Per-server rules match
+     * the address the player types, so an IP-keyed profile only ever applies to a
+     * literal-IP connection. Whether to convert it or leave it out is the user's
+     * call, so it is held here until they decide.
+     */
+    private final List<ServerRule> pendingLegacyProfiles = new ArrayList<>();
+
+    /** True while the legacy-profile decision is outstanding; the file is not written then. */
+    private boolean legacyMigrationPending = false;
+
     private OpsecConfig() {
         load();
         if (EXPLOIT_PREVENTER_LOADED) {
@@ -186,6 +197,8 @@ public class OpsecConfig {
 
     public void load() {
         readOnly = false;
+        pendingLegacyProfiles.clear();
+        legacyMigrationPending = false;
         if (!Files.exists(CONFIG_PATH)) {
             Opsec.LOGGER.info("[OpSec] Creating default config");
             // The file must be written with the invariant already satisfied: exactly one
@@ -281,19 +294,28 @@ public class OpsecConfig {
                         try {
                             SpoofSettings profile = SpoofSettings.fromJson(profileJson);
                             validateAndCorrectSettings(profile);
-                            // The legacy map was keyed by the server's resolved address,
-                            // so an IP-shaped key has to become an IP rule — an EXACT rule
-                            // compares against the name the player typed and would never
-                            // see the address the profile was saved under.
-                            ServerRule.MatchType type = ServerRule.isIpLiteral(address)
-                                    ? ServerRule.MatchType.IP
-                                    : ServerRule.MatchType.EXACT;
-                            ServerRule rule = new ServerRule(type, address);
+                            ServerRule rule = new ServerRule(
+                                    ServerRule.isIpLiteral(address)
+                                            ? ServerRule.MatchType.IP
+                                            : ServerRule.MatchType.EXACT,
+                                    address
+                            );
                             rule.copySettingsFrom(profile);
-                            serverRules.add(rule);
+                            if (rule.getMatchType() == ServerRule.MatchType.IP) {
+                                pendingLegacyProfiles.add(rule);
+                            } else {
+                                serverRules.add(rule);
+                            }
                         } catch (Exception e) {
                             Opsec.LOGGER.warn("[OpSec] Dropping malformed server profile for '{}': {}", address, e.getMessage());
                         }
+                    }
+                    if (!pendingLegacyProfiles.isEmpty()) {
+                        legacyMigrationPending = true;
+                        Opsec.LOGGER.warn(
+                            "[OpSec] {} legacy server profile(s) were saved under a resolved IP address. Per-server rules now match the address the player types, so these only apply to literal-IP connections - waiting for the user's choice.",
+                            pendingLegacyProfiles.size()
+                        );
                     }
                     Opsec.LOGGER.info("[OpSec] Migrated {} legacy server profile(s) into server rules", serverRules.size());
                 }
@@ -335,7 +357,7 @@ public class OpsecConfig {
                 anyRule.getSettings().isSpoofAsVanilla(), serverRules.size()
             );
 
-            if (dirty && !readOnly) {
+            if (dirty && !readOnly && !legacyMigrationPending) {
                 save();
             }
         } catch (IOException e) {
@@ -394,6 +416,8 @@ public class OpsecConfig {
         serverRules.clear();
         activeRule = null;
         pendingRule = null;
+        pendingLegacyProfiles.clear();
+        legacyMigrationPending = false;
         packCacheTrustedServers.clear();
         ServerRule any = new ServerRule(ServerRule.MatchType.ANY, "");
         serverRules.add(any);
@@ -468,6 +492,12 @@ public class OpsecConfig {
         if (readOnly) {
             Opsec.LOGGER.warn(
                 "[OpSec] Config is read-only (file is newer than this build) - not writing"
+            );
+            return;
+        }
+        if (legacyMigrationPending) {
+            Opsec.LOGGER.warn(
+                "[OpSec] Config is waiting for a decision on the legacy server profiles - not writing"
             );
             return;
         }
@@ -720,6 +750,82 @@ public class OpsecConfig {
     /** True when the config file is newer than this build understands and is never written. */
     public boolean isReadOnly() {
         return readOnly;
+    }
+
+    /**
+     * True while a legacy per-server profile waits for the user's decision.
+     *
+     * <p>While this holds the config file is not written: the file on disk is the only
+     * copy of the old profiles, and it has to survive until the user has said what
+     * should happen to them.</p>
+     */
+    public boolean hasPendingLegacyMigration() {
+        return legacyMigrationPending;
+    }
+
+    /** The addresses of the legacy profiles that are waiting for a decision. */
+    public List<String> getPendingLegacyProfileAddresses() {
+        List<String> addresses = new ArrayList<>();
+        for (ServerRule rule : pendingLegacyProfiles) {
+            addresses.add(rule.getPattern());
+        }
+        return addresses;
+    }
+
+    /**
+     * Converts the held legacy profiles into IP rules and writes the new config.
+     *
+     * <p>The rules only apply when the player connects by typing the IP literal.</p>
+     */
+    public void acceptLegacyProfileUpgrade() {
+        if (!legacyMigrationPending) {
+            return;
+        }
+        int anyIndex = indexOfAnyRule();
+        for (ServerRule rule : pendingLegacyProfiles) {
+            if (anyIndex >= 0) {
+                serverRules.add(anyIndex++, rule);
+            } else {
+                serverRules.add(rule);
+            }
+        }
+        int count = pendingLegacyProfiles.size();
+        pendingLegacyProfiles.clear();
+        legacyMigrationPending = false;
+        Opsec.LOGGER.info("[OpSec] Converted {} legacy server profile(s) into IP rules", count);
+        save();
+    }
+
+    /**
+     * Keeps the original file as a backup and writes a config without the held profiles.
+     */
+    public void acceptLegacyProfileBackup() {
+        if (!legacyMigrationPending) {
+            return;
+        }
+        int count = pendingLegacyProfiles.size();
+        pendingLegacyProfiles.clear();
+        legacyMigrationPending = false;
+        backupLegacyFile();
+        Opsec.LOGGER.info(
+            "[OpSec] Left {} legacy server profile(s) out of the config and kept the original file",
+            count
+        );
+        save();
+    }
+
+    /** Copies the config file the build just read to a sibling file, keeping the legacy profiles it holds. */
+    private void backupLegacyFile() {
+        try {
+            Path backup = CONFIG_PATH.resolveSibling(CONFIG_PATH.getFileName() + ".v1.bak");
+            Files.copy(CONFIG_PATH, backup, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            Opsec.LOGGER.info("[OpSec] Kept the original config file at {}", backup);
+        } catch (IOException e) {
+            Opsec.LOGGER.warn(
+                "[OpSec] Could not keep a copy of the original config file: {}",
+                e.getMessage()
+            );
+        }
     }
 
     /**

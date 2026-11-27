@@ -315,5 +315,14 @@
   "opsec.option.guardChatLinks.tooltip": "Requiere confirmación antes de que un mensaje de chat/tabla/libro en el que se ha hecho clic copie texto al portapapeles o ejecute un comando. Vanilla ejecuta ambos al instante sin aviso.",
   "opsec.button.settings.tooltip": "Abrir ajustes de OpSec",
   "opsec.option.showMultiplayerButton": "Mostrar botón en la pantalla multijugador",
-  "opsec.option.showMultiplayerButton.tooltip": "Muestra un botón de OpSec en la lista de servidores. Sin Mod Menu ese botón es la única forma de abrir los ajustes."
+  "opsec.option.showMultiplayerButton.tooltip": "Muestra un botón de OpSec en la lista de servidores. Sin Mod Menu ese botón es la única forma de abrir los ajustes.",
+  "opsec.legacyMigration.title": "Perfiles de servidor heredados",
+  "opsec.legacyMigration.warning": "§eEstos perfiles se guardaron bajo la dirección IP del servidor, no bajo el nombre que escribiste.",
+  "opsec.legacyMigration.affected": "§7Perfiles afectados:",
+  "opsec.legacyMigration.entry": "§7- §f%s",
+  "opsec.legacyMigration.more": "§8... y %s más",
+  "opsec.legacyMigration.backupExplain": "§7Copia de seguridad: §fconservar una copia del archivo original y dejar estos perfiles fuera.",
+  "opsec.legacyMigration.upgradeExplain": "§7Actualizar: §fconvertirlos en reglas de IP: solo se aplican cuando escribes la IP.",
+  "opsec.legacyMigration.backup": "Guardar copia del original",
+  "opsec.legacyMigration.upgrade": "Convertir en reglas de IP"
 }

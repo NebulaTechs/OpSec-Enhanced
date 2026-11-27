@@ -315,5 +315,14 @@
   "opsec.option.guardChatLinks.tooltip": "當點擊聊天/告示/書本訊息會複製文字到剪貼簿或執行指令時，要求先確認。原版會立即無提示地執行這兩類操作。",
   "opsec.button.settings.tooltip": "開啟 OpSec 設定",
   "opsec.option.showMultiplayerButton": "在多人遊戲畫面顯示按鈕",
-  "opsec.option.showMultiplayerButton.tooltip": "在伺服器清單中顯示一個 OpSec 按鈕。沒有 Mod Menu 時，這是進入設定的唯一方式。"
+  "opsec.option.showMultiplayerButton.tooltip": "在伺服器清單中顯示一個 OpSec 按鈕。沒有 Mod Menu 時，這是進入設定的唯一方式。",
+  "opsec.legacyMigration.title": "舊版伺服器設定",
+  "opsec.legacyMigration.warning": "§e這些設定是依伺服器的 IP 位址儲存的，而不是你輸入的位址。",
+  "opsec.legacyMigration.affected": "§7受影響的設定:",
+  "opsec.legacyMigration.entry": "§7- §f%s",
+  "opsec.legacyMigration.more": "§8... 還有 %s 筆",
+  "opsec.legacyMigration.backupExplain": "§7備份: §f保留原始檔案的副本，這些設定不匯入。",
+  "opsec.legacyMigration.upgradeExplain": "§7升級: §f轉換為 IP 規則 —— 只有你直接輸入該 IP 時才會生效。",
+  "opsec.legacyMigration.backup": "備份原始檔案",
+  "opsec.legacyMigration.upgrade": "轉換為 IP 規則"
 }

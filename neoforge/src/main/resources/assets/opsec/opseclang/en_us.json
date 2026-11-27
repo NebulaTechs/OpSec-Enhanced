@@ -315,5 +315,14 @@
   "opsec.whitelist.notInstalled": "Not installed (delete to remove)",
   "opsec.button.settings.tooltip": "Open OpSec settings",
   "opsec.option.showMultiplayerButton": "Show button on multiplayer screen",
-  "opsec.option.showMultiplayerButton.tooltip": "Shows an OpSec button on the multiplayer server list. Without Mod Menu this button is the only way into the settings in-game."
+  "opsec.option.showMultiplayerButton.tooltip": "Shows an OpSec button on the multiplayer server list. Without Mod Menu this button is the only way into the settings in-game.",
+  "opsec.legacyMigration.title": "Legacy Server Profiles",
+  "opsec.legacyMigration.warning": "§eThese profiles were saved under the server's IP address, not the name you type.",
+  "opsec.legacyMigration.affected": "§7Affected profiles:",
+  "opsec.legacyMigration.entry": "§7- §f%s",
+  "opsec.legacyMigration.more": "§8... and %s more",
+  "opsec.legacyMigration.backupExplain": "§7Backup: §fkeep a copy of the original file and leave these profiles out.",
+  "opsec.legacyMigration.upgradeExplain": "§7Upgrade: §fturn them into IP rules - they only apply when you type the IP.",
+  "opsec.legacyMigration.backup": "Backup Original File",
+  "opsec.legacyMigration.upgrade": "Upgrade to IP Rules"
 }

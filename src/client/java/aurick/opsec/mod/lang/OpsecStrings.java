@@ -188,6 +188,17 @@ public final class OpsecStrings {
     public static final String TAMPER_DOWNLOAD = "opsec.tamper.download";
     public static final String TAMPER_DISMISS_PERMANENT = "opsec.tamper.dismiss_permanent";
 
+    // Legacy per-server profile migration warning
+    public static final String LEGACY_MIGRATION_TITLE = "opsec.legacyMigration.title";
+    public static final String LEGACY_MIGRATION_WARNING = "opsec.legacyMigration.warning";
+    public static final String LEGACY_MIGRATION_AFFECTED = "opsec.legacyMigration.affected";
+    public static final String LEGACY_MIGRATION_ENTRY = "opsec.legacyMigration.entry";
+    public static final String LEGACY_MIGRATION_MORE = "opsec.legacyMigration.more";
+    public static final String LEGACY_MIGRATION_BACKUP_EXPLAIN = "opsec.legacyMigration.backupExplain";
+    public static final String LEGACY_MIGRATION_UPGRADE_EXPLAIN = "opsec.legacyMigration.upgradeExplain";
+    public static final String LEGACY_MIGRATION_BACKUP = "opsec.legacyMigration.backup";
+    public static final String LEGACY_MIGRATION_UPGRADE = "opsec.legacyMigration.upgrade";
+
     // Chat alerts + toast titles (user-visible runtime messages)
     public static final String ALERT_TRACKPACK_PATTERN = "opsec.alert.trackpack.pattern";
     public static final String TOAST_TRACKPACK = "opsec.toast.trackpack";

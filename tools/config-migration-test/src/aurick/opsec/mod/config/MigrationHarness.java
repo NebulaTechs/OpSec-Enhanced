@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * Exercises the configuration upgrade path against the production classes.
@@ -45,15 +46,61 @@ public final class MigrationHarness {
                 versionOf(configFile) == OpsecConfig.CONFIG_VERSION);
 
         // --- v1 with an IP-shaped profile key. Upstream keyed serverProfiles by the
-        //     resolved address, so an IP key must not come back as an EXACT rule:
-        //     an EXACT rule compares against the typed host, so it would never hit.
+        //     resolved address, and a rule matches the typed host, so this profile
+        //     only applies to a literal-IP connection — a different behaviour than
+        //     the profile had. The user decides what happens to it, and until they
+        //     have, nothing is written.
+        write(configFile, v1WithIpProfile());
+        String originalFile = Files.readString(configFile);
+        config.load();
+        check("v1 with an IP-shaped profile key: the decision waits for the user",
+                config.hasPendingLegacyMigration());
+        check("v1 with an IP-shaped profile key: the address is listed for the warning",
+                config.getPendingLegacyProfileAddresses().equals(List.of("203.0.113.7")));
+        check("v1 with an IP-shaped profile key: no rule exists before the decision",
+                ruleFor(config, "203.0.113.7") == null);
+        check("v1 with an IP-shaped profile key: the original file is left untouched",
+                Files.readString(configFile).equals(originalFile));
+        config.save();
+        check("v1 with an IP-shaped profile key: an incidental save writes nothing",
+                Files.readString(configFile).equals(originalFile));
+
+        // --- the user chooses to upgrade: the held profile becomes an IP rule.
         write(configFile, v1WithIpProfile());
         config.load();
+        config.acceptLegacyProfileUpgrade();
         ServerRule ipRule = ruleFor(config, "203.0.113.7");
-        check("v1: an IP-shaped profile key becomes an IP rule, not an EXACT one",
+        check("upgrade: the held profile becomes an IP rule",
                 ipRule != null && ipRule.getMatchType() == ServerRule.MatchType.IP);
-        check("v1: the migrated IP rule matches the address it was saved under",
+        check("upgrade: the IP rule matches the address it was saved under",
                 ipRule != null && ipRule.matches("203.0.113.7", 25565));
+        check("upgrade: the IP rule does not match a hostname that resolves to it",
+                ipRule != null && !ipRule.matches("play.example.com", 25565));
+        check("upgrade: the ANY rule stays last",
+                config.getServerRules().get(config.getServerRules().size() - 1).isAnyRule());
+        check("upgrade: the config is written at the current version",
+                versionOf(configFile) == OpsecConfig.CONFIG_VERSION);
+        check("upgrade: the decision no longer waits",
+                !config.hasPendingLegacyMigration());
+        config.load();
+        check("upgrade: the warning does not come back on the next load",
+                !config.hasPendingLegacyMigration());
+
+        // --- the user chooses to back up: the original file is kept and the held
+        //     profile is left out of the new config.
+        write(configFile, v1WithIpProfile());
+        String profileFile = Files.readString(configFile);
+        config.load();
+        config.acceptLegacyProfileBackup();
+        check("backup: no rule is created for the held profile",
+                ruleFor(config, "203.0.113.7") == null);
+        check("backup: the original file is kept next to the config",
+                Files.exists(configDir.resolve("opsec.json.v1.bak"))
+                        && Files.readString(configDir.resolve("opsec.json.v1.bak")).equals(profileFile));
+        check("backup: the config is written at the current version",
+                versionOf(configFile) == OpsecConfig.CONFIG_VERSION);
+        check("backup: the decision no longer waits",
+                !config.hasPendingLegacyMigration());
 
         // --- a bare IPv6 literal must not be read as "host:port". Its last group
         //     looks like a port to a naive split, which would make the rule match

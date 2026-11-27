@@ -315,5 +315,14 @@
   "opsec.option.guardChatLinks.tooltip": "クリックしたチャット/看板/本のメッセージがテキストをクリップボードにコピーしたりコマンドを実行したりする場合、確認を要求します。バニラはどちらもプロンプトなしで即座に実行します。",
   "opsec.button.settings.tooltip": "OpSec の設定を開きます",
   "opsec.option.showMultiplayerButton": "マルチプレイ画面にボタンを表示",
-  "opsec.option.showMultiplayerButton.tooltip": "サーバー一覧に OpSec のボタンを表示します。Mod Menu がない場合、このボタンが設定を開く唯一の手段です。"
+  "opsec.option.showMultiplayerButton.tooltip": "サーバー一覧に OpSec のボタンを表示します。Mod Menu がない場合、このボタンが設定を開く唯一の手段です。",
+  "opsec.legacyMigration.title": "旧形式のサーバープロファイル",
+  "opsec.legacyMigration.warning": "§eこれらのプロファイルは、入力した名前ではなくサーバーの IP アドレスをキーに保存されていました。",
+  "opsec.legacyMigration.affected": "§7影響を受けるプロファイル:",
+  "opsec.legacyMigration.entry": "§7- §f%s",
+  "opsec.legacyMigration.more": "§8... ほか %s 件",
+  "opsec.legacyMigration.backupExplain": "§7バックアップ: §f元のファイルのコピーを残し、このプロファイルは取り込みません。",
+  "opsec.legacyMigration.upgradeExplain": "§7アップグレード: §fIP ルールに変換します。IP を直接入力したときだけ適用されます。",
+  "opsec.legacyMigration.backup": "元ファイルをバックアップ",
+  "opsec.legacyMigration.upgrade": "IP ルールに変換"
 }

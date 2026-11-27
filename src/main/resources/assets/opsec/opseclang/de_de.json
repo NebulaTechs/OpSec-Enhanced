@@ -315,5 +315,14 @@
   "opsec.option.guardChatLinks.tooltip": "Verlangt eine Bestätigung, bevor ein angeklickter Chat-/Schild-/Buch-Befehl Text in die Zwischenablage kopiert oder einen Befehl ausführt. Vanilla führt beides sofort ohne Nachfrage aus.",
   "opsec.button.settings.tooltip": "OpSec-Einstellungen öffnen",
   "opsec.option.showMultiplayerButton": "Schaltfläche im Mehrspieler-Bildschirm anzeigen",
-  "opsec.option.showMultiplayerButton.tooltip": "Zeigt eine OpSec-Schaltfläche in der Serverliste. Ohne Mod Menu ist diese Schaltfläche der einzige Weg in die Einstellungen."
+  "opsec.option.showMultiplayerButton.tooltip": "Zeigt eine OpSec-Schaltfläche in der Serverliste. Ohne Mod Menu ist diese Schaltfläche der einzige Weg in die Einstellungen.",
+  "opsec.legacyMigration.title": "Legacy-Serverprofile",
+  "opsec.legacyMigration.warning": "§eDiese Profile wurden unter der IP-Adresse des Servers gespeichert, nicht unter dem eingegebenen Namen.",
+  "opsec.legacyMigration.affected": "§7Betroffene Profile:",
+  "opsec.legacyMigration.entry": "§7- §f%s",
+  "opsec.legacyMigration.more": "§8... und %s weitere",
+  "opsec.legacyMigration.backupExplain": "§7Sichern: §feine Kopie der Originaldatei behalten und diese Profile weglassen.",
+  "opsec.legacyMigration.upgradeExplain": "§7Aktualisieren: §fsie in IP-Regeln umwandeln - sie gelten nur, wenn du die IP eingibst.",
+  "opsec.legacyMigration.backup": "Originaldatei sichern",
+  "opsec.legacyMigration.upgrade": "In IP-Regeln umwandeln"
 }

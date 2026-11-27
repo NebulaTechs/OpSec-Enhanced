@@ -315,5 +315,14 @@
   "opsec.option.guardChatLinks.tooltip": "Yêu cầu xác nhận trước khi một tin nhắn chat/bảng hiệu/sách đã nhấp chuột sao chép văn bản vào clipboard hoặc chạy một lệnh. Vanilla thực hiện cả hai ngay lập tức mà không hỏi.",
   "opsec.button.settings.tooltip": "Mở cài đặt OpSec",
   "opsec.option.showMultiplayerButton": "Hiện nút trên màn hình nhiều người chơi",
-  "opsec.option.showMultiplayerButton.tooltip": "Hiện nút OpSec trong danh sách máy chủ. Không có Mod Menu thì nút này là cách duy nhất để mở cài đặt."
+  "opsec.option.showMultiplayerButton.tooltip": "Hiện nút OpSec trong danh sách máy chủ. Không có Mod Menu thì nút này là cách duy nhất để mở cài đặt.",
+  "opsec.legacyMigration.title": "Hồ sơ máy chủ cũ",
+  "opsec.legacyMigration.warning": "§eCác hồ sơ này đã được lưu theo địa chỉ IP của máy chủ, không phải tên bạn nhập.",
+  "opsec.legacyMigration.affected": "§7Các hồ sơ bị ảnh hưởng:",
+  "opsec.legacyMigration.entry": "§7- §f%s",
+  "opsec.legacyMigration.more": "§8... và %s nữa",
+  "opsec.legacyMigration.backupExplain": "§7Sao lưu: §fgiữ lại một bản sao tệp gốc và không đưa các hồ sơ này vào.",
+  "opsec.legacyMigration.upgradeExplain": "§7Nâng cấp: §fchuyển chúng thành quy tắc IP - chỉ áp dụng khi bạn nhập trực tiếp IP.",
+  "opsec.legacyMigration.backup": "Sao lưu tệp gốc",
+  "opsec.legacyMigration.upgrade": "Chuyển thành quy tắc IP"
 }

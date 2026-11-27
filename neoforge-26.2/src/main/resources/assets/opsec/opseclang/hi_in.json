@@ -315,5 +315,14 @@
   "opsec.option.guardChatLinks.tooltip": "जब कोई चैट/साइन/बुक संदेश क्लिक किया जाता है और वह टेक्स्ट आपके क्लिपबोर्ड में कॉपी करता है या कोई कमांड चलाता है, तो पुष्टि की आवश्यकता होती है। वैनिला दोनों को बिना किसी संकेत के तुरंत निष्पादित करता है।",
   "opsec.button.settings.tooltip": "OpSec सेटिंग्स खोलें",
   "opsec.option.showMultiplayerButton": "मल्टीप्लेयर स्क्रीन पर बटन दिखाएं",
-  "opsec.option.showMultiplayerButton.tooltip": "सर्वर सूची में एक OpSec बटन दिखाता है। Mod Menu के बिना यह बटन सेटिंग्स में जाने का एकमात्र तरीका है।"
+  "opsec.option.showMultiplayerButton.tooltip": "सर्वर सूची में एक OpSec बटन दिखाता है। Mod Menu के बिना यह बटन सेटिंग्स में जाने का एकमात्र तरीका है।",
+  "opsec.legacyMigration.title": "पुराने सर्वर प्रोफ़ाइल",
+  "opsec.legacyMigration.warning": "§eये प्रोफ़ाइल सर्वर के IP पते के अंतर्गत सहेजे गए थे, आपके द्वारा टाइप किए गए नाम के अंतर्गत नहीं।",
+  "opsec.legacyMigration.affected": "§7प्रभावित प्रोफ़ाइल:",
+  "opsec.legacyMigration.entry": "§7- §f%s",
+  "opsec.legacyMigration.more": "§8... और %s अधिक",
+  "opsec.legacyMigration.backupExplain": "§7बैकअप: §fमूल फ़ाइल की एक प्रति रखें और इन प्रोफ़ाइल को छोड़ दें।",
+  "opsec.legacyMigration.upgradeExplain": "§7अपग्रेड: §fइन्हें IP नियमों में बदलें - ये केवल तब लागू होती हैं जब आप IP टाइप करें।",
+  "opsec.legacyMigration.backup": "मूल फ़ाइल का बैकअप लें",
+  "opsec.legacyMigration.upgrade": "IP नियमों में बदलें"
 }
