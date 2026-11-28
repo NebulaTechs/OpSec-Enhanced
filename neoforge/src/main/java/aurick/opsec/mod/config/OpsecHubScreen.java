@@ -34,6 +34,11 @@ public class OpsecHubScreen extends Screen implements OpsecScreens.Marker {
     protected void init() {
         int y = 40;
 
+        if (config.hasPendingLegacyMigration()) {
+            y = addCard(y, OpsecStrings.HUB_LEGACY_DECISION, OpsecStrings.HUB_LEGACY_DECISION_DESC,
+                    () -> show(new LegacyProfileWarningScreen(this)));
+        }
+
         y = addCard(y, OpsecStrings.HUB_RULE_SETTINGS, OpsecStrings.HUB_RULE_SETTINGS_DESC, () -> {
             ServerRule rule = config.getActiveRule();
             if (rule == null) {
