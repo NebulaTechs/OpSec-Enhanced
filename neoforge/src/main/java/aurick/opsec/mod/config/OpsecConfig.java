@@ -798,33 +798,51 @@ public class OpsecConfig {
 
     /**
      * Keeps the original file as a backup and writes a config without the held profiles.
+     *
+     * <p>The backup has to be in place before the original is replaced: the file on disk
+     * is the only copy of the old profiles, so a failed copy leaves everything as it was
+     * and the decision stays open.</p>
+     *
+     * @return true when the backup was written and the decision was applied
      */
-    public void acceptLegacyProfileBackup() {
+    public boolean acceptLegacyProfileBackup() {
         if (!legacyMigrationPending) {
-            return;
+            return true;
+        }
+        if (!backupLegacyFile()) {
+            Opsec.LOGGER.error(
+                "[OpSec] Could not keep a copy of the original config file - the legacy server profiles stay where they are"
+            );
+            return false;
         }
         int count = pendingLegacyProfiles.size();
         pendingLegacyProfiles.clear();
         legacyMigrationPending = false;
-        backupLegacyFile();
         Opsec.LOGGER.info(
             "[OpSec] Left {} legacy server profile(s) out of the config and kept the original file",
             count
         );
         save();
+        return true;
     }
 
-    /** Copies the config file the build just read to a sibling file, keeping the legacy profiles it holds. */
-    private void backupLegacyFile() {
+    /**
+     * Copies the config file the build just read to a sibling file, keeping the legacy profiles it holds.
+     *
+     * @return true when the copy was written
+     */
+    private boolean backupLegacyFile() {
         try {
             Path backup = CONFIG_PATH.resolveSibling(CONFIG_PATH.getFileName() + ".v1.bak");
             Files.copy(CONFIG_PATH, backup, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             Opsec.LOGGER.info("[OpSec] Kept the original config file at {}", backup);
+            return true;
         } catch (IOException e) {
             Opsec.LOGGER.warn(
                 "[OpSec] Could not keep a copy of the original config file: {}",
                 e.getMessage()
             );
+            return false;
         }
     }
 

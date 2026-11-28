@@ -102,6 +102,44 @@ public final class MigrationHarness {
         check("backup: the decision no longer waits",
                 !config.hasPendingLegacyMigration());
 
+        // --- the backup cannot be written. The file on disk is the only copy of the
+        //     old profiles, so a failed copy has to leave it alone and keep the
+        //     decision open - otherwise the next save would destroy the profiles.
+        write(configFile, v1WithIpProfile());
+        String originalBeforeFailure = Files.readString(configFile);
+        config.load();
+        Path backupPath = configDir.resolve("opsec.json.v1.bak");
+        Files.deleteIfExists(backupPath);
+        Files.createDirectory(backupPath);
+        Path keepFile = backupPath.resolve("keep.txt");
+        Files.writeString(keepFile, "x");
+        boolean backupApplied = config.acceptLegacyProfileBackup();
+        check("a backup that could not be written reports that nothing was applied",
+                !backupApplied);
+        check("a backup that could not be written leaves the original file untouched",
+                Files.readString(configFile).equals(originalBeforeFailure));
+        check("a backup that could not be written leaves the decision open",
+                config.hasPendingLegacyMigration());
+        check("a backup that could not be written keeps the profile listed",
+                config.getPendingLegacyProfileAddresses().equals(List.of("203.0.113.7")));
+        config.save();
+        check("a backup that could not be written still stops an incidental save",
+                Files.readString(configFile).equals(originalBeforeFailure));
+        Files.delete(keepFile);
+        Files.delete(backupPath);
+
+        // --- a setting the user changes while the decision is open cannot be
+        //     written yet, and the original file stays the copy of the old profiles.
+        write(configFile, v1WithIpProfile());
+        String beforeChange = Files.readString(configFile);
+        config.load();
+        config.getAnyRule().getSettings().setSpoofAsVanilla(true);
+        config.save();
+        check("a setting changed while the decision is open is not written",
+                Files.readString(configFile).equals(beforeChange));
+        check("the decision is still open after the change",
+                config.hasPendingLegacyMigration());
+
         // --- a bare IPv6 literal must not be read as "host:port". Its last group
         //     looks like a port to a naive split, which would make the rule match
         //     nothing at all.
