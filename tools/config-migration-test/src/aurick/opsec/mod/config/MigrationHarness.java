@@ -140,6 +140,24 @@ public final class MigrationHarness {
         check("the decision is still open after the change",
                 config.hasPendingLegacyMigration());
 
+        // --- the user can leave the prompt without choosing. The prompt keeps no
+        //     state of its own: the decision lives in the file, so the next load
+        //     offers the prompt again and the old profiles are still there.
+        write(configFile, v1WithIpProfile());
+        String beforeDismissal = Files.readString(configFile);
+        config.load();
+        check("leaving the prompt without a choice leaves the decision open",
+                config.hasPendingLegacyMigration());
+        check("leaving the prompt without a choice leaves the original file untouched",
+                Files.readString(configFile).equals(beforeDismissal));
+        config.load();
+        check("the prompt is offered again on the next load",
+                config.hasPendingLegacyMigration());
+        check("the original file is still untouched after the next load",
+                Files.readString(configFile).equals(beforeDismissal));
+        check("the profile is still listed after the next load",
+                config.getPendingLegacyProfileAddresses().equals(List.of("203.0.113.7")));
+
         // --- a bare IPv6 literal must not be read as "host:port". Its last group
         //     looks like a port to a naive split, which would make the rule match
         //     nothing at all.
