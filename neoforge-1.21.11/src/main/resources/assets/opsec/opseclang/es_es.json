@@ -286,6 +286,8 @@
   "opsec.hub.ruleGlobal": "Línea base global",
   "opsec.hub.settings": "Ajustes",
   "opsec.hub.settings.desc": "Apariencia, modo streamer y diagnóstico",
+  "opsec.hub.legacyDecision": "Perfiles de servidor heredados",
+  "opsec.hub.legacyDecision.desc": "Decide qué ocurre con los perfiles de servidor que se guardaron bajo una dirección IP.",
   "opsec.screen.settings.title": "Ajustes",
   "opsec.screen.ruleSettings.title": "Reglas del servidor",
   "opsec.screen.accountManager.title": "Gestor de cuentas",
@@ -324,5 +326,6 @@
   "opsec.legacyMigration.backupExplain": "§7Copia de seguridad: §fconservar una copia del archivo original y dejar estos perfiles fuera.",
   "opsec.legacyMigration.upgradeExplain": "§7Actualizar: §fconvertirlos en reglas de IP: solo se aplican cuando escribes la IP.",
   "opsec.legacyMigration.backup": "Guardar copia del original",
-  "opsec.legacyMigration.upgrade": "Convertir en reglas de IP"
+  "opsec.legacyMigration.upgrade": "Convertir en reglas de IP",
+  "opsec.legacyMigration.backupFailed": "§cNo se pudo escribir la copia de seguridad. El archivo original se dejó sin cambios."
 }

@@ -285,6 +285,8 @@
   "opsec.hub.ruleGlobal": "Глобальные настройки",
   "opsec.hub.settings": "Настройки",
   "opsec.hub.settings.desc": "Внешний вид, режим стримера и диагностика",
+  "opsec.hub.legacyDecision": "Старые профили серверов",
+  "opsec.hub.legacyDecision.desc": "Решите, что делать с профилями серверов, сохранёнными по IP-адресу.",
   "opsec.screen.settings.title": "Настройки",
   "opsec.screen.ruleSettings.title": "Правила серверов",
   "opsec.screen.accountManager.title": "Менеджер аккаунтов",
@@ -324,5 +326,6 @@
   "opsec.legacyMigration.backupExplain": "§7Резервная копия: §fсохранить копию исходного файла и не переносить эти профили.",
   "opsec.legacyMigration.upgradeExplain": "§7Обновить: §fпревратить их в правила по IP — они сработают только при вводе IP напрямую.",
   "opsec.legacyMigration.backup": "Копия исходного файла",
-  "opsec.legacyMigration.upgrade": "Превратить в правила по IP"
+  "opsec.legacyMigration.upgrade": "Превратить в правила по IP",
+  "opsec.legacyMigration.backupFailed": "§cНе удалось записать резервную копию. Исходный файл оставлен без изменений."
 }

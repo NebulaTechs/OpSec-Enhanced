@@ -286,6 +286,8 @@
   "opsec.hub.ruleGlobal": "वैश्विक आधार",
   "opsec.hub.settings": "सेटिंग्स",
   "opsec.hub.settings.desc": "रूप, स्ट्रीमर मोड और डायग्नोस्टिक्स",
+  "opsec.hub.legacyDecision": "पुराने सर्वर प्रोफ़ाइल",
+  "opsec.hub.legacyDecision.desc": "तय करें कि IP पते के अंतर्गत सहेजे गए सर्वर प्रोफ़ाइल का क्या हो।",
   "opsec.screen.settings.title": "सेटिंग्स",
   "opsec.screen.ruleSettings.title": "सर्वर नियम",
   "opsec.screen.accountManager.title": "खाता प्रबंधक",
@@ -324,5 +326,6 @@
   "opsec.legacyMigration.backupExplain": "§7बैकअप: §fमूल फ़ाइल की एक प्रति रखें और इन प्रोफ़ाइल को छोड़ दें।",
   "opsec.legacyMigration.upgradeExplain": "§7अपग्रेड: §fइन्हें IP नियमों में बदलें - ये केवल तब लागू होती हैं जब आप IP टाइप करें।",
   "opsec.legacyMigration.backup": "मूल फ़ाइल का बैकअप लें",
-  "opsec.legacyMigration.upgrade": "IP नियमों में बदलें"
+  "opsec.legacyMigration.upgrade": "IP नियमों में बदलें",
+  "opsec.legacyMigration.backupFailed": "§cबैकअप लिखा नहीं जा सका। मूल फ़ाइल को अपरिवर्तित छोड़ दिया गया।"
 }

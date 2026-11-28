@@ -198,6 +198,7 @@ public final class OpsecStrings {
     public static final String LEGACY_MIGRATION_UPGRADE_EXPLAIN = "opsec.legacyMigration.upgradeExplain";
     public static final String LEGACY_MIGRATION_BACKUP = "opsec.legacyMigration.backup";
     public static final String LEGACY_MIGRATION_UPGRADE = "opsec.legacyMigration.upgrade";
+    public static final String LEGACY_MIGRATION_BACKUP_FAILED = "opsec.legacyMigration.backupFailed";
 
     // Chat alerts + toast titles (user-visible runtime messages)
     public static final String ALERT_TRACKPACK_PATTERN = "opsec.alert.trackpack.pattern";
@@ -365,6 +366,8 @@ public final class OpsecStrings {
     public static final String HUB_RULE_GLOBAL = "opsec.hub.ruleGlobal";
     public static final String HUB_SETTINGS = "opsec.hub.settings";
     public static final String HUB_SETTINGS_DESC = "opsec.hub.settings.desc";
+    public static final String HUB_LEGACY_DECISION = "opsec.hub.legacyDecision";
+    public static final String HUB_LEGACY_DECISION_DESC = "opsec.hub.legacyDecision.desc";
 
     // Global settings screen
     public static final String SCREEN_SETTINGS_TITLE = "opsec.screen.settings.title";

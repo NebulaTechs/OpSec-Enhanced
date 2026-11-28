@@ -287,6 +287,8 @@
   "opsec.hub.ruleGlobal": "Global baseline",
   "opsec.hub.settings": "Settings",
   "opsec.hub.settings.desc": "Appearance, streamer mode and diagnostics",
+  "opsec.hub.legacyDecision": "Legacy Server Profiles",
+  "opsec.hub.legacyDecision.desc": "Decide what happens to the server profiles that were saved under an IP address.",
   "opsec.screen.settings.title": "Settings",
   "opsec.screen.ruleSettings.title": "Server Rules",
   "opsec.screen.accountManager.title": "Account Manager",
@@ -324,5 +326,6 @@
   "opsec.legacyMigration.backupExplain": "§7Backup: §fkeep a copy of the original file and leave these profiles out.",
   "opsec.legacyMigration.upgradeExplain": "§7Upgrade: §fturn them into IP rules - they only apply when you type the IP.",
   "opsec.legacyMigration.backup": "Backup Original File",
-  "opsec.legacyMigration.upgrade": "Upgrade to IP Rules"
+  "opsec.legacyMigration.upgrade": "Upgrade to IP Rules",
+  "opsec.legacyMigration.backupFailed": "§cCould not write the backup. The original file was left unchanged."
 }

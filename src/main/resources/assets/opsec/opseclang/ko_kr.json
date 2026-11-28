@@ -286,6 +286,8 @@
   "opsec.hub.ruleGlobal": "전역 기준값",
   "opsec.hub.settings": "설정",
   "opsec.hub.settings.desc": "외형, 스트리머 모드 및 진단",
+  "opsec.hub.legacyDecision": "기존 서버 프로필",
+  "opsec.hub.legacyDecision.desc": "IP 주소로 저장된 서버 프로필을 어떻게 처리할지 선택하세요.",
   "opsec.screen.settings.title": "설정",
   "opsec.screen.ruleSettings.title": "서버 규칙",
   "opsec.screen.accountManager.title": "계정 관리자",
@@ -324,5 +326,6 @@
   "opsec.legacyMigration.backupExplain": "§7백업: §f원본 파일의 복사본을 남기고 이 프로필은 제외합니다.",
   "opsec.legacyMigration.upgradeExplain": "§7업그레이드: §fIP 규칙으로 변환합니다. IP를 직접 입력할 때만 적용됩니다.",
   "opsec.legacyMigration.backup": "원본 파일 백업",
-  "opsec.legacyMigration.upgrade": "IP 규칙으로 변환"
+  "opsec.legacyMigration.upgrade": "IP 규칙으로 변환",
+  "opsec.legacyMigration.backupFailed": "§c백업을 쓰지 못했습니다. 원본 파일은 변경되지 않았습니다."
 }

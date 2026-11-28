@@ -286,6 +286,8 @@
   "opsec.hub.ruleGlobal": "グローバル基準",
   "opsec.hub.settings": "設定",
   "opsec.hub.settings.desc": "外観、ストリーマーモード、診断",
+  "opsec.hub.legacyDecision": "旧形式のサーバープロファイル",
+  "opsec.hub.legacyDecision.desc": "IP アドレスで保存されたサーバープロファイルの扱いを決めてください。",
   "opsec.screen.settings.title": "設定",
   "opsec.screen.ruleSettings.title": "サーバールール",
   "opsec.screen.accountManager.title": "アカウントマネージャー",
@@ -324,5 +326,6 @@
   "opsec.legacyMigration.backupExplain": "§7バックアップ: §f元のファイルのコピーを残し、このプロファイルは取り込みません。",
   "opsec.legacyMigration.upgradeExplain": "§7アップグレード: §fIP ルールに変換します。IP を直接入力したときだけ適用されます。",
   "opsec.legacyMigration.backup": "元ファイルをバックアップ",
-  "opsec.legacyMigration.upgrade": "IP ルールに変換"
+  "opsec.legacyMigration.upgrade": "IP ルールに変換",
+  "opsec.legacyMigration.backupFailed": "§cバックアップを書き込めませんでした。元のファイルは変更されていません。"
 }

@@ -212,6 +212,8 @@
   "opsec.hub.ruleGlobal": "全局基线",
   "opsec.hub.settings": "全局设置",
   "opsec.hub.settings.desc": "外观、直播模式与诊断日志",
+  "opsec.hub.legacyDecision": "旧版服务器配置",
+  "opsec.hub.legacyDecision.desc": "决定按 IP 地址保存的旧版服务器配置要如何处理。",
   "opsec.screen.settings.title": "全局设置",
   "opsec.screen.ruleSettings.title": "服务器规则",
   "opsec.screen.accountManager.title": "账户管理",
@@ -324,5 +326,6 @@
   "opsec.legacyMigration.backupExplain": "§7备份: §f保留原始文件的副本，这些配置不导入。",
   "opsec.legacyMigration.upgradeExplain": "§7升级: §f转换为 IP 规则 —— 只有你直接输入该 IP 时才会生效。",
   "opsec.legacyMigration.backup": "备份原始文件",
-  "opsec.legacyMigration.upgrade": "转换为 IP 规则"
+  "opsec.legacyMigration.upgrade": "转换为 IP 规则",
+  "opsec.legacyMigration.backupFailed": "§c无法写入备份。原始文件保持不变。"
 }

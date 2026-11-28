@@ -286,6 +286,8 @@
   "opsec.hub.ruleGlobal": "Mặc định toàn cục",
   "opsec.hub.settings": "Cài đặt",
   "opsec.hub.settings.desc": "Ngoại hình, chế độ streamer và chẩn đoán",
+  "opsec.hub.legacyDecision": "Hồ sơ máy chủ cũ",
+  "opsec.hub.legacyDecision.desc": "Hãy quyết định điều gì xảy ra với các hồ sơ máy chủ đã lưu theo địa chỉ IP.",
   "opsec.screen.settings.title": "Cài đặt",
   "opsec.screen.ruleSettings.title": "Quy tắc Máy chủ",
   "opsec.screen.accountManager.title": "Quản lý Tài khoản",
@@ -324,5 +326,6 @@
   "opsec.legacyMigration.backupExplain": "§7Sao lưu: §fgiữ lại một bản sao tệp gốc và không đưa các hồ sơ này vào.",
   "opsec.legacyMigration.upgradeExplain": "§7Nâng cấp: §fchuyển chúng thành quy tắc IP - chỉ áp dụng khi bạn nhập trực tiếp IP.",
   "opsec.legacyMigration.backup": "Sao lưu tệp gốc",
-  "opsec.legacyMigration.upgrade": "Chuyển thành quy tắc IP"
+  "opsec.legacyMigration.upgrade": "Chuyển thành quy tắc IP",
+  "opsec.legacyMigration.backupFailed": "§cKhông thể ghi bản sao lưu. Tệp gốc được giữ nguyên."
 }

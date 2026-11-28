@@ -287,6 +287,8 @@
   "opsec.hub.ruleGlobal": "Pangkalahatang batayan",
   "opsec.hub.settings": "Settings",
   "opsec.hub.settings.desc": "Itsura, streamer mode at diagnostics",
+  "opsec.hub.legacyDecision": "Mga dating profile ng server",
+  "opsec.hub.legacyDecision.desc": "Piliin ang mangyayari sa mga profile ng server na na-save sa ilalim ng isang IP address.",
   "opsec.screen.settings.title": "Settings",
   "opsec.screen.ruleSettings.title": "Server Rules",
   "opsec.screen.accountManager.title": "Account Manager",
@@ -324,5 +326,6 @@
   "opsec.legacyMigration.backupExplain": "§7Backup: §fpanatilihin ang kopya ng orihinal na file at huwag isama ang mga profile na ito.",
   "opsec.legacyMigration.upgradeExplain": "§7Upgrade: §fgawing IP rules ang mga ito - gumagana lang kapag inilagay mo ang IP.",
   "opsec.legacyMigration.backup": "I-back up ang orihinal",
-  "opsec.legacyMigration.upgrade": "Gawing IP rules"
+  "opsec.legacyMigration.upgrade": "Gawing IP rules",
+  "opsec.legacyMigration.backupFailed": "§cHindi na-write ang backup. Hindi binago ang orihinal na file."
 }

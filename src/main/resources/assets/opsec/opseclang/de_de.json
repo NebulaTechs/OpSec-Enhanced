@@ -286,6 +286,8 @@
   "opsec.hub.ruleGlobal": "Globale Grundlage",
   "opsec.hub.settings": "Einstellungen",
   "opsec.hub.settings.desc": "Aussehen, Streamer-Modus und Diagnose",
+  "opsec.hub.legacyDecision": "Alte Server-Profile",
+  "opsec.hub.legacyDecision.desc": "Entscheide, was mit den Server-Profilen passiert, die unter einer IP-Adresse gespeichert wurden.",
   "opsec.screen.settings.title": "Einstellungen",
   "opsec.screen.ruleSettings.title": "Serverregeln",
   "opsec.screen.accountManager.title": "Kontoverwaltung",
@@ -324,5 +326,6 @@
   "opsec.legacyMigration.backupExplain": "§7Sichern: §feine Kopie der Originaldatei behalten und diese Profile weglassen.",
   "opsec.legacyMigration.upgradeExplain": "§7Aktualisieren: §fsie in IP-Regeln umwandeln - sie gelten nur, wenn du die IP eingibst.",
   "opsec.legacyMigration.backup": "Originaldatei sichern",
-  "opsec.legacyMigration.upgrade": "In IP-Regeln umwandeln"
+  "opsec.legacyMigration.upgrade": "In IP-Regeln umwandeln",
+  "opsec.legacyMigration.backupFailed": "§cDie Sicherung konnte nicht geschrieben werden. Die Originaldatei wurde unverändert gelassen."
 }
