@@ -23,6 +23,8 @@ public class LegacyProfileWarningScreen extends Screen {
 
     private final Screen parent;
 
+    private String errorKey = null;
+
     public LegacyProfileWarningScreen(Screen parent) {
         super(Component.literal(OpsecLang.tr(OpsecStrings.LEGACY_MIGRATION_TITLE)));
         this.parent = parent;
@@ -41,7 +43,7 @@ public class LegacyProfileWarningScreen extends Screen {
         int listed = Math.min(addresses.size(), MAX_LISTED);
         boolean hasMore = addresses.size() > MAX_LISTED;
 
-        int textLines = 5 + listed + (hasMore ? 1 : 0);
+        int textLines = 5 + listed + (hasMore ? 1 : 0) + (this.errorKey != null ? 1 : 0);
         int totalHeight = textLineHeight * textLines + textToButtonGap + buttonSpacing + buttonHeight;
         int startY = (this.height - totalHeight) / 2;
 
@@ -69,11 +71,19 @@ public class LegacyProfileWarningScreen extends Screen {
         addCenteredStringWidget(Component.literal(OpsecLang.tr(OpsecStrings.LEGACY_MIGRATION_BACKUP_EXPLAIN)), centerX, y);
         y += textLineHeight;
         addCenteredStringWidget(Component.literal(OpsecLang.tr(OpsecStrings.LEGACY_MIGRATION_UPGRADE_EXPLAIN)), centerX, y);
-        y += textLineHeight + textToButtonGap;
+        y += textLineHeight;
+        if (this.errorKey != null) {
+            addCenteredStringWidget(Component.literal(OpsecLang.tr(this.errorKey)), centerX, y);
+            y += textLineHeight;
+        }
+        y += textToButtonGap;
 
         this.addRenderableWidget(Button.builder(Component.literal(OpsecLang.tr(OpsecStrings.LEGACY_MIGRATION_BACKUP)), button -> {
-            OpsecConfig.getInstance().acceptLegacyProfileBackup();
-            this.onClose();
+            if (OpsecConfig.getInstance().acceptLegacyProfileBackup()) {
+                this.onClose();
+            } else {
+                this.showError(OpsecStrings.LEGACY_MIGRATION_BACKUP_FAILED);
+            }
         }).bounds(centerX - buttonWidth / 2, y, buttonWidth, buttonHeight).build());
 
         this.addRenderableWidget(Button.builder(Component.literal(OpsecLang.tr(OpsecStrings.LEGACY_MIGRATION_UPGRADE)), button -> {
@@ -95,6 +105,18 @@ public class LegacyProfileWarningScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
     }
     *///?}
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        // The decision is the only way out: leaving without one leaves the config
+        // unwritten, so the screen stays until one of the two actions is taken.
+        return false;
+    }
+
+    private void showError(String key) {
+        this.errorKey = key;
+        this.rebuildWidgets();
+    }
 
     @Override
     public void onClose() {

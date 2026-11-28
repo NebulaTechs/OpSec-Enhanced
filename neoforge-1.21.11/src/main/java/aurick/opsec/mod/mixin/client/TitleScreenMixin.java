@@ -22,8 +22,6 @@ public abstract class TitleScreenMixin extends Screen {
 
     @Unique private boolean opsec$integrityHandled = false;
 
-    @Unique private boolean opsec$legacyMigrationHandled = false;
-
     protected TitleScreenMixin(Component title) {
         super(title);
     }
@@ -42,10 +40,11 @@ public abstract class TitleScreenMixin extends Screen {
                 return;
             }
         }
-        if (opsec$legacyMigrationHandled || this.minecraft == null) {
+        if (this.minecraft == null) {
             return;
         }
-        opsec$legacyMigrationHandled = true;
+        // The decision stays open until one of the two actions is taken, so the prompt
+        // is offered on every title screen instead of being consumed by the first tick.
         if (OpsecConfig.getInstance().hasPendingLegacyMigration()) {
             //? if >=26.2 {
             /*this.minecraft.setScreenAndShow(new LegacyProfileWarningScreen(this));*/
